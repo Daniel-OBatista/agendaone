@@ -5,13 +5,18 @@ import { useForm } from 'react-hook-form'
 import { supabase } from '../lib/supabaseClient'
 import { useRouter } from 'next/navigation'
 
+type FormularioLogin = {
+  email: string
+  senha: string
+}
+
 export default function LoginPage() {
-  const { register, handleSubmit } = useForm()
+  const { register, handleSubmit } = useForm<FormularioLogin>()
   const [erro, setErro] = useState('')
   const [carregando, setCarregando] = useState(false)
   const router = useRouter()
 
-  const onSubmit = async (data: any) => {
+  const onSubmit = async (data: FormularioLogin) => {
     setErro('')
     setCarregando(true)
 
@@ -25,22 +30,22 @@ export default function LoginPage() {
     if (error || !loginData.session) {
       setErro(error?.message || 'Erro ao fazer login.')
       setCarregando(false)
+      return
+    }
+
+    // Após login, verifica a role
+    const { data: userData } = await supabase.auth.getUser()
+
+    const { data: perfil } = await supabase
+      .from('users')
+      .select('role')
+      .eq('id', userData.user?.id)
+      .single()
+
+    if (perfil?.role === 'admin') {
+      router.push('/admin')
     } else {
-      // Após login
-      const { data: userData } = await supabase.auth.getUser()
-
-      const { data: perfil } = await supabase
-        .from('users')
-        .select('role')
-        .eq('id', userData.user?.id)
-        .single()
-
-      if (perfil?.role === 'admin') {
-        router.push('/admin')
-      } else {
-        router.push('/cliente')
-      }
-      // ou redirecione com base na role futuramente
+      router.push('/cliente')
     }
   }
 

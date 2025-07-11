@@ -3,8 +3,16 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '../../lib/supabaseClient'
 
+type AgendamentoUsuario = {
+  id: string
+  data_hora: string
+  status: string
+  service_id: string
+  services: { nome: string }[]
+}
+
 export default function AgendamentosPage() {
-  const [agendamentos, setAgendamentos] = useState<any[]>([])
+  const [agendamentos, setAgendamentos] = useState<AgendamentoUsuario[]>([])
   const [erro, setErro] = useState('')
   const [carregando, setCarregando] = useState(true)
 
@@ -26,7 +34,7 @@ export default function AgendamentosPage() {
       if (error) {
         setErro(error.message)
       } else {
-        setAgendamentos(data)
+        setAgendamentos(data as AgendamentoUsuario[])
       }
 
       setCarregando(false)
@@ -51,7 +59,10 @@ export default function AgendamentosPage() {
   }
 
   const formatarData = (iso: string) =>
-    new Date(iso).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' })
+    new Date(iso).toLocaleString('pt-BR', {
+      dateStyle: 'short',
+      timeStyle: 'short',
+    })
 
   return (
     <main className="p-6 max-w-md mx-auto">
@@ -67,7 +78,7 @@ export default function AgendamentosPage() {
         <ul className="flex flex-col gap-4">
           {agendamentos.map((a) => (
             <li key={a.id} className="border p-4 rounded shadow-sm bg-white">
-              <p><strong>Serviço:</strong> {a.services?.nome || '---'}</p>
+              <p><strong>Serviço:</strong> {a.services[0]?.nome || '---'}</p>
               <p><strong>Data:</strong> {formatarData(a.data_hora)}</p>
               <p><strong>Status:</strong> {a.status}</p>
 
