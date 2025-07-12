@@ -67,10 +67,10 @@ export default function ServicosAdminPage() {
       .order(ordenarPor, { ascending: true })
 
     if (!error && data) {
-      const formatado = data.map((s: any) => ({
-        ...s,
-        total_agendamentos: s.appointments?.length || 0,
-      }))
+        const formatado = data.map((s: Servico & { appointments?: any[] }) => ({
+            ...s,
+            total_agendamentos: s.appointments?.length || 0,
+          }))          
       setServicos(formatado)
     }
   }

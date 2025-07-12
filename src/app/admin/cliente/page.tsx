@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '../../lib/supabaseClient'
 import { useRouter } from 'next/navigation'
-import { Home, Search } from 'lucide-react'
+import { Home } from 'lucide-react'
 
 type Usuario = {
   id: string

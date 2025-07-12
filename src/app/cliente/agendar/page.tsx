@@ -39,7 +39,11 @@ export default function AgendarPage() {
   useEffect(() => {
     async function fetchServicos() {
       const { data, error } = await supabase.from('services').select('*')
-      if (!error && data) setServicos(data)
+      if (error) {
+        console.error('Erro ao buscar serviços:', error.message)
+        return
+      }
+      if (data) setServicos(data)
     }
     fetchServicos()
   }, [])
