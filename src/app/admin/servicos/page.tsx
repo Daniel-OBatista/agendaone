@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { supabase } from '../../lib/supabaseClient'
 import { useRouter } from 'next/navigation'
 import { Home, Search } from 'lucide-react'
+import ImageCropper from '../../../../utils/ImageCropper'
 
 export default function ServicosAdminPage() {
   type Servico = {
@@ -21,9 +22,10 @@ export default function ServicosAdminPage() {
   const [nome, setNome] = useState('')
   const [descricao, setDescricao] = useState('')
   const [valor, setValor] = useState('')
-  const [duracao, setDuracao] = useState('') // NOVO: estado para duração
+  const [duracao, setDuracao] = useState('')
   const [imagem, setImagem] = useState<File | null>(null)
   const [imagemPreview, setImagemPreview] = useState<string | null>(null)
+  const [imagemParaRecorte, setImagemParaRecorte] = useState<string | null>(null)
   const [erro, setErro] = useState('')
   const [modoEdicao, setModoEdicao] = useState(false)
   const [idEditando, setIdEditando] = useState<string | null>(null)
@@ -111,7 +113,7 @@ export default function ServicosAdminPage() {
       nome,
       descricao,
       valor: parseFloat(valor),
-      duracao: parseInt(duracao), // <- NOVO
+      duracao: parseInt(duracao),
       imagem_url: imagem_url || null,
       user_id: userId,
     }
@@ -144,7 +146,7 @@ export default function ServicosAdminPage() {
     setNome(servico.nome)
     setDescricao(servico.descricao)
     setValor(String(servico.valor))
-    setDuracao(String(servico.duracao || '')) // <- NOVO
+    setDuracao(String(servico.duracao || ''))
     setImagem(null)
     setImagemPreview(null)
   }
@@ -155,10 +157,26 @@ export default function ServicosAdminPage() {
     setNome('')
     setDescricao('')
     setValor('')
-    setDuracao('') // <- NOVO
+    setDuracao('')
     setImagem(null)
     setImagemPreview(null)
     setErro('')
+  }
+
+  function handleImagemSelecionada(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (!file) return
+    const reader = new FileReader()
+    reader.onloadend = () => {
+      setImagemParaRecorte(reader.result as string)
+    }
+    reader.readAsDataURL(file)
+  }
+
+  function handleRecorteFinalizado(croppedFile: File, previewUrl: string) {
+    setImagem(croppedFile)
+    setImagemPreview(previewUrl)
+    setImagemParaRecorte(null)
   }
 
   const servicosFiltrados = servicos.filter((s) =>
@@ -166,20 +184,28 @@ export default function ServicosAdminPage() {
   )
 
   return (
-    <main className="min-h-screen bg-pink-50 text-zinc-800 px-12 py-4 max-w-6xl mx-auto text-sm">
-      <div className="mb-4">
+    <main className="min-h-screen bg-pink-50 text-zinc-800 px-20 py-10 text-sm">
+      {imagemParaRecorte && (
+        <ImageCropper
+          imageSrc={imagemParaRecorte}
+          onCropComplete={handleRecorteFinalizado}
+          onCancel={() => setImagemParaRecorte(null)}
+        />
+      )}
+
+      <div className="mb-4 flex items-center justify-start gap-4">
         <button
           onClick={() => router.push('/admin')}
           className="flex items-center gap-2 text-white bg-pink-500 px-3 py-1.5 rounded-md hover:bg-pink-600 text-sm"
         >
           <Home size={18} />
-          Início do Admin
+          Início
         </button>
+
+        <h1 className="text-2xl font-bold text-pink-700">Gerenciar Serviços</h1>
       </div>
 
-      <h1 className="text-xl font-bold text-pink-600 mb-4 border-b border-pink-300 pb-1">
-        Gerenciar Serviços
-      </h1>
+      <hr className="border-t border-pink-300 mb-6" />
 
       {/* FORMULÁRIO */}
       <div className="bg-white p-3 rounded-md shadow-sm mb-5 max-w-md">
@@ -218,15 +244,8 @@ export default function ServicosAdminPage() {
               Escolher imagem
               <input
                 type="file"
-                onChange={(e) => {
-                  const file = e.target.files?.[0]
-                  setImagem(file || null)
-                  if (file) {
-                    const reader = new FileReader()
-                    reader.onload = () => setImagemPreview(reader.result as string)
-                    reader.readAsDataURL(file)
-                  }
-                }}
+                accept="image/*"
+                onChange={handleImagemSelecionada}
                 className="hidden"
               />
             </label>
@@ -293,7 +312,7 @@ export default function ServicosAdminPage() {
               <img
                 src={s.imagem_url}
                 alt={s.nome}
-                className="w-full h-30 object-contain rounded mb-2"
+                className="w-[320px] h-[130px] object-contain rounded mb-2 mx-auto bg-zinc-100"
               />
             )}
             <p className="font-semibold text-pink-600">{s.nome}</p>
@@ -301,6 +320,7 @@ export default function ServicosAdminPage() {
             <p className="text-xs text-green-600 mt-1">R$ {Number(s.valor).toFixed(2)}</p>
             <p className="text-xs text-blue-600">⏱ {s.duracao} min</p>
             <p className="text-xs mt-1">📆 {s.total_agendamentos ?? 0} agendamentos</p>
+
             <div className="flex gap-1.5 mt-2">
               <button
                 onClick={() => editarServico(s)}

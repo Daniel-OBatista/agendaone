@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { supabase } from '../../lib/supabaseClient'
 import { useRouter } from 'next/navigation'
 import { Home, Search } from 'lucide-react'
+import ImageCropper from '../../../../utils/ImageCropper'
 
 type Operador = {
   id: string
@@ -33,6 +34,7 @@ export default function OperadoresAdminPage() {
   const [modoEdicao, setModoEdicao] = useState(false)
   const [idEditando, setIdEditando] = useState<string | null>(null)
   const [filtroBusca, setFiltroBusca] = useState('')
+  const [imagemParaRecorte, setImagemParaRecorte] = useState<string | null>(null)
 
   useEffect(() => {
     verificarAdmin()
@@ -147,23 +149,46 @@ export default function OperadoresAdminPage() {
     o.nome.toLowerCase().includes(filtroBusca.toLowerCase())
   )
 
+  function handleImagemSelecionada(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (!file) return
+    const reader = new FileReader()
+    reader.onloadend = () => {
+      setImagemParaRecorte(reader.result as string)
+    }
+    reader.readAsDataURL(file)
+  }
+
+  function handleRecorteFinalizado(croppedFile: File, previewUrl: string) {
+    setFoto(croppedFile)
+    setFotoPreview(previewUrl)
+    setImagemParaRecorte(null)
+  }
+
   return (
-    <main className="min-h-screen bg-pink-50 text-zinc-800 px-12 py-4 max-w-6xl mx-auto text-sm">
-      <div className="mb-4">
+    <main className="min-h-screen bg-pink-50 text-zinc-800 px-20 py-10 text-sm">
+      {imagemParaRecorte && (
+        <ImageCropper
+          imageSrc={imagemParaRecorte}
+          onCropComplete={handleRecorteFinalizado}
+          onCancel={() => setImagemParaRecorte(null)}
+        />
+      )}
+
+      <div className="mb-4 flex items-center justify-start gap-4">
         <button
           onClick={() => router.push('/admin')}
           className="flex items-center gap-2 text-white bg-pink-500 px-3 py-1.5 rounded-md hover:bg-pink-600 text-sm"
         >
           <Home size={18} />
-          Início do Admin
+          Início
         </button>
+
+        <h1 className="text-2xl font-bold text-pink-700">Gerenciar Operadores</h1>
       </div>
 
-      <h1 className="text-xl font-bold text-pink-600 mb-4 border-b border-pink-300 pb-1">
-        Gerenciar Operadores
-      </h1>
+      <hr className="border-t border-pink-300 mb-6" />
 
-      {/* FORMULÁRIO */}
       <div className="bg-white p-3 rounded-md shadow-sm mb-5 max-w-md">
         <input
           type="text"
@@ -210,15 +235,8 @@ export default function OperadoresAdminPage() {
               Escolher imagem
               <input
                 type="file"
-                onChange={(e) => {
-                  const file = e.target.files?.[0]
-                  setFoto(file || null)
-                  if (file) {
-                    const reader = new FileReader()
-                    reader.onload = () => setFotoPreview(reader.result as string)
-                    reader.readAsDataURL(file)
-                  }
-                }}
+                accept="image/*"
+                onChange={handleImagemSelecionada}
                 className="hidden"
               />
             </label>
@@ -254,7 +272,6 @@ export default function OperadoresAdminPage() {
         {erro && <p className="text-red-500 text-xs mt-2">{erro}</p>}
       </div>
 
-      {/* FILTRO */}
       <div className="flex items-center gap-2 mb-6">
         <Search size={16} className="text-pink-700" />
         <input
@@ -266,7 +283,6 @@ export default function OperadoresAdminPage() {
         />
       </div>
 
-      {/* LISTA DE OPERADORES */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-10">
         {operadoresFiltrados.map((o) => (
           <div key={o.id} className="bg-white p-3 rounded-md shadow-sm border border-pink-100">
@@ -274,7 +290,7 @@ export default function OperadoresAdminPage() {
               <img
                 src={o.foto_url}
                 alt={o.nome}
-                className="w-full h-30 object-contain rounded mb-2"
+                className="w-[320px] h-[130px] object-contain rounded mb-2 mx-auto bg-zinc-100"
               />
             )}
             <p className="font-semibold text-pink-600">{o.nome}</p>

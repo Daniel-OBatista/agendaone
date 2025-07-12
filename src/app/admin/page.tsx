@@ -31,27 +31,27 @@ export default function AdminPage() {
         <div className="flex flex-col gap-4">
           <button
             onClick={() => router.push('/admin/servicos')}
-            className="bg-pink-500 text-white py-3 rounded hover:bg-pink-600"
+            className="bg-pink-50 border border-pink-500 text-pink-600 py-3 rounded hover:bg-pink-300"
           >
             Gerenciar Serviços
           </button>
 
           <button
             onClick={() => router.push('/admin/operador')}
-            className="bg-white border border-pink-500 text-pink-600 py-3 rounded hover:bg-pink-100"
+            className="bg-white border border-pink-500 text-pink-600 py-3 rounded hover:bg-pink-300"
           >
             Gerenciar Operadores
           </button>
 
           <button
             onClick={() => router.push('/admin/agendamentos')}
-            className="bg-white border border-pink-500 text-pink-600 py-3 rounded hover:bg-pink-100"
+            className="bg-pink-50 border border-pink-500 text-pink-600 py-3 rounded hover:bg-pink-300"
           >
             Meus atendimentos
           </button>
           <button
             onClick={() => router.push('/admin/cliente')}
-            className="bg-white border border-pink-500 text-pink-600 py-3 rounded hover:bg-pink-100"
+            className="bg-white border border-pink-500 text-pink-600 py-3 rounded hover:bg-pink-300"
           >
             Meus Clientes
           </button>
@@ -61,9 +61,9 @@ export default function AdminPage() {
               await supabase.auth.signOut()
               router.push('/login')
             }}
-            className="bg-gray-300 text-black px-4 py-2 rounded hover:bg-gray-400 mt-4"
+            className="bg-gray-300 text-black px-1 py-1 rounded hover:bg-gray-400 mt-4 w-42 mx-auto"
           >
-            Sair
+            SAIR
           </button>
         </div>
       </div>

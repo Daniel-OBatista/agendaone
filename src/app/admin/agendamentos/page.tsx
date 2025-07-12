@@ -1,3 +1,4 @@
+
 'use client'
 
 import { useEffect, useState } from 'react'
@@ -15,6 +16,25 @@ type AgendamentoCompleto = {
   status: string
   users: { nome: string }[]
   services: { nome: string }[]
+}
+
+function gerarHorariosDisponiveis(duracao: number, agendamentos: string[]) {
+  const horarios: string[] = []
+  const horaInicio = 8
+  const horaFim = 18
+  const intervalo = duracao
+
+  for (let h = horaInicio; h < horaFim; h++) {
+    for (let m = 0; m < 60; m += intervalo) {
+      const hora = `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`
+      if (h >= 12 && h < 13) continue
+      if (!agendamentos.includes(hora)) {
+        horarios.push(hora)
+      }
+    }
+  }
+
+  return horarios
 }
 
 export default function AgendamentosAdminPage() {
@@ -42,30 +62,28 @@ export default function AgendamentosAdminPage() {
     }
 
     async function fetchAgendamentos() {
-      const { data, error } = await supabase
-        .from('appointments')
-        .select(`
-          id,
-          data_hora,
-          status,
-          users (nome),
-          services (nome)
+        const { data, error } = await supabase
+          .from('appointments')
+          .select(`
+            id,
+            data_hora,
+            status,
+            users!fk_usuario(nome),
+            services(nome)
         `)
-        .order('data_hora', { ascending: true })
 
-      if (error) {
-        setErro(error.message)
-      } else {
-        setAgendamentos(data as AgendamentoCompleto[])
-      }
-      setCarregando(false)
-    }
+          .order('data_hora', { ascending: true })
+      
+        if (error) {
+          setErro(error.message)
+        } else {
+          setAgendamentos(data as AgendamentoCompleto[])
+        }
+        setCarregando(false)
+      }     
 
     verificarAdmin()
   }, [router])
-
-  const formatarDataHora = (iso: string) =>
-    new Date(iso).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' })
 
   async function atualizarStatus(id: string, novoStatus: string) {
     const { error } = await supabase
@@ -83,9 +101,14 @@ export default function AgendamentosAdminPage() {
   }
 
   async function excluirAgendamento(id: string) {
+    const confirmar = confirm('Deseja realmente excluir este agendamento?')
+    if (!confirmar) return
+
     const { error } = await supabase.from('appointments').delete().eq('id', id)
     if (!error) {
       setAgendamentos((prev) => prev.filter((a) => a.id !== id))
+    } else {
+      alert('Erro ao excluir: ' + error.message)
     }
   }
 
@@ -106,34 +129,38 @@ export default function AgendamentosAdminPage() {
     isSameDay(parseISO(a.data_hora), dataSelecionada)
   )
 
+  const horariosAgendados = agendamentosDoDia.map((a) =>
+    format(new Date(a.data_hora), 'HH:mm')
+  )
+
+  const horariosDisponiveis = gerarHorariosDisponiveis(60, horariosAgendados)
+
   const marcarDias = ({ date }: { date: Date }) => {
     const tem = agendamentos.some((a) => isSameDay(parseISO(a.data_hora), date))
     return tem ? 'highlight' : undefined
   }
 
   return (
-   
-    // (Todo o restante do seu código permanece igual até a tag <main>)
-    <main className="p-6 max-w-5xl mx-auto bg-pink-50 min-h-screen">
-    <div className="mb-4">
-        <button
-          onClick={() => router.push('/admin')}
-          className="flex items-center gap-2 text-white bg-pink-500 px-3 py-1.5 rounded-md hover:bg-pink-600 text-sm"
-        >
-          <Home size={18} />
-          Início do Admin
-        </button>
-      </div>
-    <h1 className="text-2xl font-bold text-pink-700 mb-6">
-        📅 Meus atendimentos
-    </h1>
+    <main className="min-h-screen bg-pink-50 text-zinc-800 px-20 py-10 text-sm">
+    <div className="mb-4 flex items-center justify-start gap-4">
+    <button
+        onClick={() => router.push('/admin')}
+        className="flex items-center gap-2 text-white bg-pink-500 px-3 py-1.5 rounded-md hover:bg-pink-600 text-sm"
+    >
+        <Home size={18} />
+        Início
+    </button>
 
-    {erro && <p className="text-red-500 mb-4">{erro}</p>}
+    <h1 className="text-2xl font-bold text-pink-700">📅 Meus atendimentos</h1>
+    </div>
 
-    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {/* Calendário */}
+    <hr className="border-t border-pink-300 mb-6" />
+
+      {erro && <p className="text-red-500 mb-4">{erro}</p>}
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div>
-        <Calendar
+          <Calendar
             locale="pt-BR"
             onChange={(date) => setDataSelecionada(date as Date)}
             value={dataSelecionada}
@@ -141,114 +168,118 @@ export default function AgendamentosAdminPage() {
             calendarType="iso8601"
             formatShortWeekday={(locale, date) => format(date, 'EEEEE', { locale: ptBR })}
             formatMonthYear={(locale, date) => format(date, 'MMMM yyyy', { locale: ptBR })}
-        />
-        <style>{`
+          />
+          <style>{`
             .react-calendar {
-                border: 2px solid #be185d; /* rosa escuro */
-                background-color: #fff;
-                border-radius: 8px;
-                padding: 8px;
-                color: #444;
-                width: 100%;
-              }              
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  transition: all 0.3s ease;
 
+              border: 2px solid #be185d;
+              background-color: #fff;
+              border-radius: 8px;
+              padding: 8px;
+              color: #444;
+              width: 100%;
+            }
             .react-calendar__tile {
-            border-radius: 6px;
-            padding: 8px 0;
-            }
+  transition: background 0.3s ease, color 0.3s ease;
+  font-size: 0.9rem;
 
+              border-radius: 6px;
+              padding: 8px 0;
+            }
             .react-calendar__tile--now {
-            background: #fde2f3 !important;
-            color: #d63384 !important;
-            font-weight: bold;
+              background: #fde2f3 !important;
+              color: #d63384 !important;
+              font-weight: bold;
             }
-
             .react-calendar__tile--active {
-            background: #ec4899 !important;
-            color: white !important;
+              background: #ec4899 !important;
+              color: white !important;
             }
-
             .highlight {
-            background: #f472b6 !important;
-            color: white !important;
-            border-radius: 9999px;
-            font-weight: bold;
+              background: #f472b6 !important;
+              color: white !important;
+              border-radius: 9999px;
+              font-weight: bold;
             }
-
-            .react-calendar__month-view__days__day {
-            color: #333;
-            }
-
-            .react-calendar__navigation__label {
-            color: #ec4899 !important;
-            font-weight: bold;
-            }
-
-            .react-calendar__navigation__arrow {
-            color: #ec4899 !important;
-            }
-
             .react-calendar__month-view__weekdays abbr {
-            text-decoration: none;
-            color: #555;
-            font-weight: 500;
+              text-decoration: none;
+              color: #555;
+              font-weight: 500;
             }
-        `}</style>
+          `}</style>
         </div>
 
-        {/* Lista do dia selecionado */}
         <div>
-        <h2 className="text-xl font-semibold mb-2 text-pink-700">
-            Agendamentos em {format(dataSelecionada, 'dd/MM/yyyy')}
+          <h3 className="text-lg font-semibold text-pink-700">⏳ Horários Disponíveis</h3>
+          {horariosDisponiveis.length === 0 ? (
+            <p className="text-gray-600 mt-2">Nenhum horário disponível.</p>
+          ) : (
+            <div className="flex flex-wrap gap-2 mt-2">
+              {horariosDisponiveis.map((hora) => (
+                <span
+                  key={hora}
+                  className="bg-pink-100 text-pink-700 px-3 py-1 rounded-full text-sm font-medium"
+                >
+                  {hora}
+                </span>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Lista de agendamentos abaixo */}
+      <div className="mt-10">
+        <h2 className="text-xl font-semibold mb-2 text-pink-700 text-center">
+          Agendamentos em {format(dataSelecionada, 'dd/MM/yyyy')}
         </h2>
-        <p className="text-sm text-gray-700 mb-4">
-            📊 Total: {agendamentosDoDia.length} agendamento{agendamentosDoDia.length !== 1 ? 's' : ''}
+        <p className="text-sm text-gray-700 text-center mb-4">
+          📊 Total: {agendamentosDoDia.length} agendamento{agendamentosDoDia.length !== 1 ? 's' : ''}
         </p>
 
         {carregando ? (
-            <p className="text-gray-500">Carregando agendamentos...</p>
+          <p className="text-center text-gray-500">Carregando agendamentos...</p>
         ) : agendamentosDoDia.length === 0 ? (
-            <p className="text-gray-500">Nenhum agendamento neste dia.</p>
+          <p className="text-center text-gray-500">Nenhum agendamento neste dia.</p>
         ) : (
-            <ul className="flex flex-col gap-4">
+          <ul className="flex flex-col gap-4 max-w-xl mx-auto">
             {agendamentosDoDia.map((a) => (
-                <li key={a.id} className="border p-4 rounded bg-white dark:bg-zinc-800 shadow-sm">
+              <li key={a.id} className="border p-4 rounded bg-white shadow-sm">
                 <p><strong>👤 Cliente:</strong> {a.users[0]?.nome || '---'}</p>
                 <p><strong>💅 Serviço:</strong> {a.services[0]?.nome || '---'}</p>
                 <p><strong>🕒 Horário:</strong> {format(new Date(a.data_hora), 'HH:mm')}</p>
                 <p><strong>Status:</strong> {badge(a.status)}</p>
-
                 <div className="flex gap-2 mt-3 flex-wrap">
-                    {a.status !== 'concluído' && (
+                  {a.status !== 'concluído' && (
                     <button
-                        onClick={() => atualizarStatus(a.id, 'concluído')}
-                        className="bg-green-500 text-white px-3 py-1 rounded hover:bg-green-600 transition"
+                      onClick={() => atualizarStatus(a.id, 'concluído')}
+                      className="bg-green-500 text-white px-3 py-1 rounded hover:bg-green-600 transition"
                     >
-                        ✅ Concluído
+                      ✅ Concluído
                     </button>
-                    )}
-                    {a.status !== 'cancelado' && (
+                  )}
+                  {a.status !== 'cancelado' && (
                     <button
-                        onClick={() => atualizarStatus(a.id, 'cancelado')}
-                        className="bg-yellow-500 text-white px-3 py-1 rounded hover:bg-yellow-600 transition"
+                      onClick={() => atualizarStatus(a.id, 'cancelado')}
+                      className="bg-yellow-500 text-white px-3 py-1 rounded hover:bg-yellow-600 transition"
                     >
-                        🚫 Cancelar
+                      🚫 Cancelar
                     </button>
-                    )}
-                    <button
+                  )}
+                  <button
                     onClick={() => excluirAgendamento(a.id)}
                     className="bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600 transition"
-                    >
+                  >
                     🗑️ Excluir
-                    </button>
+                  </button>
                 </div>
-                </li>
+              </li>
             ))}
-            </ul>
+          </ul>
         )}
-        </div>
-    </div>
+      </div>
     </main>
-
   )
 }

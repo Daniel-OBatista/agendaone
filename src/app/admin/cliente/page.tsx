@@ -11,6 +11,7 @@ type Usuario = {
   email: string
   telefone?: string
   role: string
+  ultimo_agendamento?: string | null
 }
 
 export default function ClientesAdminPage() {
@@ -39,27 +40,48 @@ export default function ClientesAdminPage() {
       const { data, error } = await supabase
         .from('users')
         .select('id, nome, email, telefone, role')
-        .neq('role', 'admin') // opcional: filtrar só clientes
+        .neq('role', 'admin')
 
       if (error) setErro(error.message)
-      else setUsuarios(data as Usuario[])
+      else {
+        const usuariosComUltimoAgendamento = await Promise.all(
+          (data as Usuario[]).map(async (user) => {
+            const { data: agendamento } = await supabase
+              .from('appointments')
+              .select('data_hora')
+              .eq('user_id', user.id)
+              .order('data_hora', { ascending: false })
+              .limit(1)
+              .single()
+
+            return {
+              ...user,
+              ultimo_agendamento: agendamento?.data_hora || null,
+            }
+          })
+        )
+        setUsuarios(usuariosComUltimoAgendamento)
+      }
     }
 
     verificarAdmin()
   }, [router])
 
   return (
-    <main className="p-6 max-w-4xl mx-auto bg-pink-50 min-h-screen">
-    <div className="mb-4">
+    <main className="min-h-screen bg-pink-50 text-zinc-800 px-20 py-10 text-sm">
+      <div className="mb-4 flex items-center justify-start gap-4">
         <button
           onClick={() => router.push('/admin')}
           className="flex items-center gap-2 text-white bg-pink-500 px-3 py-1.5 rounded-md hover:bg-pink-600 text-sm"
         >
           <Home size={18} />
-          Início do Admin
+          Início
         </button>
-      </div>    
-      <h1 className="text-2xl font-bold text-pink-700 mb-6">👥 Meus Clientes</h1>
+
+        <h1 className="text-2xl font-bold text-pink-700">👥 Meus Clientes</h1>
+      </div>
+
+      <hr className="border-t border-pink-300 mb-6" />
 
       {erro && <p className="text-red-500 mb-4">{erro}</p>}
 
@@ -69,6 +91,7 @@ export default function ClientesAdminPage() {
             <th className="p-3 text-left">Nome</th>
             <th className="p-3 text-left">Email</th>
             <th className="p-3 text-left">Telefone</th>
+            <th className="p-3 text-left">Último Agendamento</th>
           </tr>
         </thead>
         <tbody>
@@ -77,6 +100,14 @@ export default function ClientesAdminPage() {
               <td className="p-3">{user.nome}</td>
               <td className="p-3">{user.email}</td>
               <td className="p-3">{user.telefone || '—'}</td>
+              <td className="p-3">
+                {user.ultimo_agendamento
+                  ? new Date(user.ultimo_agendamento).toLocaleString('pt-BR', {
+                      dateStyle: 'short',
+                      timeStyle: 'short',
+                    })
+                  : '—'}
+              </td>
             </tr>
           ))}
         </tbody>
