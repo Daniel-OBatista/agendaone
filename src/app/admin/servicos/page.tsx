@@ -5,7 +5,16 @@ import { supabase } from '../../lib/supabaseClient'
 import { useRouter } from 'next/navigation'
 
 export default function ServicosAdminPage() {
-  const [servicos, setServicos] = useState<any[]>([])
+    type Servico = {
+        id: string
+        nome: string
+        descricao: string
+        valor: number
+        created_at?: string
+      }
+      
+      const [servicos, setServicos] = useState<Servico[]>([])
+      
   const [nome, setNome] = useState('')
   const [descricao, setDescricao] = useState('')
   const [valor, setValor] = useState('')

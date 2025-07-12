@@ -5,7 +5,15 @@ import { supabase } from '../../lib/supabaseClient'
 import { useRouter } from 'next/navigation'
 
 export default function AgendarPage() {
-  const [servicos, setServicos] = useState<any[]>([])
+    type Servico = {
+        id: string
+        nome: string
+        descricao: string
+        valor: number
+      }
+      
+      const [servicos, setServicos] = useState<Servico[]>([])
+      
   const [servicoId, setServicoId] = useState('')
   const [dataHora, setDataHora] = useState('')
   const [erro, setErro] = useState('')

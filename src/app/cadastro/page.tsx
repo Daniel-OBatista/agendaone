@@ -5,13 +5,19 @@ import { useForm } from 'react-hook-form'
 import { supabase } from '../lib/supabaseClient'
 import { useRouter } from 'next/navigation'
 
+type FormularioCadastro = {
+  nome: string
+  email: string
+  senha: string
+}
+
 export default function CadastroPage() {
-  const { register, handleSubmit } = useForm()
+  const { register, handleSubmit } = useForm<FormularioCadastro>()
   const [erro, setErro] = useState('')
   const [carregando, setCarregando] = useState(false)
   const router = useRouter()
 
-  const onSubmit = async (data: any) => {
+  const onSubmit = async (data: FormularioCadastro) => {
     setErro('')
     setCarregando(true)
 
@@ -29,7 +35,7 @@ export default function CadastroPage() {
       return
     }
 
-    // Tenta pegar o ID diretamente do usuário autenticado
+    // 2. Pega o ID do usuário
     const { data: userData, error: userError } = await supabase.auth.getUser()
 
     if (userError || !userData.user?.id) {
@@ -40,6 +46,7 @@ export default function CadastroPage() {
 
     const user_id = userData.user.id
 
+    // 3. Cria registro na tabela "users"
     const { error: insertError } = await supabase.from('users').insert([
       {
         id: user_id,
