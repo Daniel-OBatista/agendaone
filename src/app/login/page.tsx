@@ -33,7 +33,6 @@ export default function LoginPage() {
       return
     }
 
-    // Após login, verifica a role
     const { data: userData } = await supabase.auth.getUser()
 
     const { data: perfil } = await supabase
@@ -50,16 +49,34 @@ export default function LoginPage() {
   }
 
   return (
-    <main className="max-w-md mx-auto mt-10 p-6 bg-white shadow rounded">
-      <h2 className="text-xl font-bold mb-4 text-pink-700">Login</h2>
-      <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4">
-        <input {...register('email')} type="email" placeholder="Email" className="border p-2 rounded" required />
-        <input {...register('senha')} type="password" placeholder="Senha" className="border p-2 rounded" required />
-        <button disabled={carregando} type="submit" className="bg-pink-500 text-white py-2 rounded hover:bg-pink-600">
-          {carregando ? 'Entrando...' : 'Entrar'}
-        </button>
-        {erro && <p className="text-red-500 text-sm">{erro}</p>}
-      </form>
+    <main className="min-h-screen bg-pink-50 flex items-center justify-center px-4">
+      <div className="w-full max-w-md bg-white p-6 rounded shadow-md">
+        <h2 className="text-2xl font-bold text-pink-700 mb-6 text-center">🎀 Login</h2>
+        <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4">
+          <input
+            {...register('email')}
+            type="email"
+            placeholder="Seu e-mail"
+            className="border border-pink-200 p-2 rounded text-zinc-800 placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-pink-400"
+            required
+          />
+          <input
+            {...register('senha')}
+            type="password"
+            placeholder="Senha"
+            className="border border-pink-200 p-2 rounded text-zinc-800 placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-pink-400"
+            required
+          />
+          <button
+            disabled={carregando}
+            type="submit"
+            className="bg-pink-500 text-white py-2 rounded hover:bg-pink-600 transition-colors"
+          >
+            {carregando ? 'Entrando...' : 'Entrar'}
+          </button>
+          {erro && <p className="text-red-500 text-sm text-center">{erro}</p>}
+        </form>
+      </div>
     </main>
   )
 }
