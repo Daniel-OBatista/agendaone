@@ -8,21 +8,20 @@ export default function ClientePage() {
   const router = useRouter()
 
   useEffect(() => {
-    async function verificarPermissao() {
+    async function verificarCliente() {
       const { data: userData } = await supabase.auth.getUser()
       const { data: perfil } = await supabase
         .from('users')
         .select('role')
         .eq('id', userData.user?.id)
         .single()
-
-      if (!perfil || perfil.role !== 'cliente') {
-        router.push('/') // ou '/login'
+  
+      if (perfil?.role !== 'cliente') {
+        router.push('/')
       }
     }
-
-    verificarPermissao()
-  }, [])
+    verificarCliente()
+  }, [router]) 
 
   return (
     <main className="p-8 max-w-md mx-auto text-center">

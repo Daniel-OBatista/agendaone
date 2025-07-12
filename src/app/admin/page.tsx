@@ -16,13 +16,12 @@ export default function AdminPage() {
         .eq('id', userData.user?.id)
         .single()
 
-      if (!perfil || perfil.role !== 'admin') {
+      if (perfil?.role !== 'admin') {
         router.push('/')
       }
     }
-
     verificarAdmin()
-  }, [])
+  }, [router])
 
   return (
     <main className="p-8 max-w-md mx-auto text-center">

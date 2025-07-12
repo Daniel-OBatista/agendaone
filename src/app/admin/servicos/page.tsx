@@ -12,7 +12,7 @@ export default function ServicosAdminPage() {
   const [erro, setErro] = useState('')
   const router = useRouter()
 
-  // Verifica se o usuário é admin
+  // ✅ Corrigido: dependência [router] incluída
   useEffect(() => {
     async function verificarAdmin() {
       const { data: userData } = await supabase.auth.getUser()
@@ -31,12 +31,16 @@ export default function ServicosAdminPage() {
     }
 
     async function fetchServicos() {
-      const { data } = await supabase.from('services').select('*').order('created_at', { ascending: false })
+      const { data } = await supabase
+        .from('services')
+        .select('*')
+        .order('created_at', { ascending: false })
+
       setServicos(data || [])
     }
 
     verificarAdmin()
-  }, [])
+  }, [router]) // <- dependência adicionada aqui
 
   async function adicionarServico() {
     if (!nome || !valor) {
@@ -59,7 +63,10 @@ export default function ServicosAdminPage() {
       setNome('')
       setDescricao('')
       setValor('')
-      const { data } = await supabase.from('services').select('*').order('created_at', { ascending: false })
+      const { data } = await supabase
+        .from('services')
+        .select('*')
+        .order('created_at', { ascending: false })
       setServicos(data || [])
     }
   }
