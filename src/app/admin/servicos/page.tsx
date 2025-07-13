@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '../../lib/supabaseClient'
 import { useRouter } from 'next/navigation'
-import { Home, Search } from 'lucide-react'
+import { Home } from 'lucide-react'
 import ImageCropper from '../../../../utils/ImageCropper'
 
 export default function ServicosAdminPage() {
@@ -284,7 +284,6 @@ export default function ServicosAdminPage() {
       {/* FILTROS */}
       <div className="flex flex-col sm:flex-row justify-start items-start gap-18 mb-6">
         <div className="flex items-center gap-2">
-          <Search size={16} className="text-pink-700" />
           <input
             type="text"
             placeholder="Buscar serviço..."
@@ -295,7 +294,7 @@ export default function ServicosAdminPage() {
         </div>
         <select
           value={ordenarPor}
-          onChange={(e) => setOrdenarPor(e.target.value as any)}
+          onChange={(e) => setOrdenarPor(e.target.value as 'nome' | 'valor' | 'created_at')}
           className="border rounded p-1 text-sm"
         >
           <option value="created_at">Mais recentes</option>
