@@ -1,6 +1,6 @@
 export default function Home() {
   return (
-    <main className="flex min-h-screen flex-col items-center justify-start sm:justify-center bg-pink-50 p-6 sm:p-8 text-center">
+    <main className="flex min-h-screen flex-col items-center justify-center sm:justify-center bg-pink-50 text-center px-4 pt-24 sm:pt-0">
       <div className="mb-6 text-center">
     <h1 className="text-3xl font-bold text-pink-700">Estúdio de Unhas</h1>
     <div className="w-40 h-1 bg-pink-400 mx-auto my-2 rounded" />
