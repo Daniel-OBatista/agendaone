@@ -1,7 +1,7 @@
 export default function Home() {
   return (
     // Container principal ocupando a altura toda da tela
-    <main className="flex min-h-screen flex-col items-center justify-center bg-pink-50 text-center px-4">
+    <main className="flex min-h-screen flex-col items-center justify-center bg-pink-50 text-center px-4 pt-12">
       
       {/* Container central com largura máxima em dispositivos maiores */}
       <div className="w-full max-w-md">
