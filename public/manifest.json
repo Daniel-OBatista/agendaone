@@ -8,7 +8,7 @@
     "icons": [
       {
         "src": "/salao.png",
-        "sizes": "192x192",
+        "sizes": "256x256",
         "type": "image/png"
       },
       {
