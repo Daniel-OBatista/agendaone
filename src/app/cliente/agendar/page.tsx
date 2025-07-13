@@ -35,18 +35,19 @@ export default function AgendarPage() {
     if (reagendarId) setAgendamentoAntigoId(reagendarId)
   }, [searchParams])
 
-  // Carrega serviços
-  useEffect(() => {
-    async function fetchServicos() {
-      const { data, error } = await supabase.from('services').select('*')
-      if (error) {
-        console.error('Erro ao buscar serviços:', error.message)
-        return
-      }
-      if (data) setServicos(data)
-    }
-    fetchServicos()
-  }, [])
+    // Carrega serviços
+    useEffect(() => {
+        async function fetchServicos() {
+        const { data, error } = await supabase.from('services').select('*')
+        if (error) {
+            console.error('Erro ao buscar serviços:', error.message)
+            return
+        }
+        if (data) setServicos(data)
+        }
+    
+        fetchServicos()
+    }, [])  
 
   // Atualiza horários disponíveis quando muda data ou serviço
   useEffect(() => {

@@ -67,7 +67,7 @@ export default function ServicosAdminPage() {
       .order(ordenarPor, { ascending: true })
 
     if (!error && data) {
-        const formatado = data.map((s: Servico & { appointments?: any[] }) => ({
+        const formatado = data.map((s: Servico & { appointments?: { id: string }[] }) => ({
             ...s,
             total_agendamentos: s.appointments?.length || 0,
           }))          
