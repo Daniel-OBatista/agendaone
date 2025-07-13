@@ -3,15 +3,9 @@
 import { useEffect, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { supabase } from '../../lib/supabaseClient'
+import { Suspense } from 'react'
 
-type Servico = {
-  id: string
-  nome: string
-  descricao: string
-  valor: number
-}
-
-export default function AgendarPage() {
+function AgendarClientContent() {
   const [servicos, setServicos] = useState<Servico[]>([])
   const [servicoId, setServicoId] = useState('')
   const [dataSelecionada, setDataSelecionada] = useState('')
@@ -26,30 +20,25 @@ export default function AgendarPage() {
 
   const horariosFixos = ['09:00', '10:00', '11:00', '13:00', '14:00', '15:00', '16:00']
 
-  // Pré-seleciona serviço e reagendamento (via URL)
   useEffect(() => {
     const service = searchParams.get('service')
     const reagendarId = searchParams.get('reagendar')
-
     if (service) setServicoId(service)
     if (reagendarId) setAgendamentoAntigoId(reagendarId)
   }, [searchParams])
 
-    // Carrega serviços
-    useEffect(() => {
-        async function fetchServicos() {
-        const { data, error } = await supabase.from('services').select('*')
-        if (error) {
-            console.error('Erro ao buscar serviços:', error.message)
-            return
-        }
-        if (data) setServicos(data)
-        }
-    
-        fetchServicos()
-    }, [])  
+  useEffect(() => {
+    async function fetchServicos() {
+      const { data, error } = await supabase.from('services').select('*')
+      if (error) {
+        console.error('Erro ao buscar serviços:', error.message)
+        return
+      }
+      if (data) setServicos(data)
+    }
+    fetchServicos()
+  }, [])
 
-  // Atualiza horários disponíveis quando muda data ou serviço
   useEffect(() => {
     if (servicoId && dataSelecionada) {
       buscarHorariosDisponiveis(dataSelecionada, servicoId)
@@ -63,23 +52,23 @@ export default function AgendarPage() {
     const fim = new Date(`${data}T23:59:59`).toISOString()
 
     const { data: agendamentos, error } = await supabase
-    .from('appointments')
-    .select('data_hora')
-    .eq('service_id', servicoId)
-    .gte('data_hora', inicio)
-    .lte('data_hora', fim)
+      .from('appointments')
+      .select('data_hora')
+      .eq('service_id', servicoId)
+      .gte('data_hora', inicio)
+      .lte('data_hora', fim)
 
     if (error) {
       console.error('Erro ao buscar horários disponíveis:', error.message)
       return
     }
 
+    const horariosOcupados =
+      agendamentos?.map((a) =>
+        new Date(a.data_hora).toISOString().slice(11, 16)
+      ) || []
 
-    const horariosOcupados = agendamentos?.map(a =>
-      new Date(a.data_hora).toISOString().slice(11, 16)
-    ) || []
-
-    const disponiveis = horariosFixos.filter(h => !horariosOcupados.includes(h))
+    const disponiveis = horariosFixos.filter((h) => !horariosOcupados.includes(h))
     setHorariosDisponiveis(disponiveis)
   }
 
@@ -102,7 +91,6 @@ export default function AgendarPage() {
 
     const dataHoraISO = new Date(`${dataSelecionada}T${horaSelecionada}`).toISOString()
 
-    // Verifica conflito
     const { data: conflito, error: conflitoError } = await supabase
       .from('appointments')
       .select('id')
@@ -121,7 +109,6 @@ export default function AgendarPage() {
       return
     }
 
-    // Insere novo agendamento
     const { error: insertError } = await supabase.from('appointments').insert([
       {
         user_id: userData.user.id,
@@ -134,14 +121,12 @@ export default function AgendarPage() {
     if (insertError) {
       setErro(insertError.message)
     } else {
-      // Se estiver reagendando, cancela o anterior
       if (agendamentoAntigoId) {
         await supabase
           .from('appointments')
           .update({ status: 'cancelado' })
           .eq('id', agendamentoAntigoId)
       }
-
       router.push('/cliente/agendamentos')
     }
 
@@ -188,8 +173,10 @@ export default function AgendarPage() {
         disabled={!dataSelecionada || horariosDisponiveis.length === 0}
       >
         <option value="">Selecione um horário</option>
-        {horariosDisponiveis.map(h => (
-          <option key={h} value={h}>{h}</option>
+        {horariosDisponiveis.map((h) => (
+          <option key={h} value={h}>
+            {h}
+          </option>
         ))}
       </select>
 
@@ -204,4 +191,19 @@ export default function AgendarPage() {
       {erro && <p className="text-red-500 text-sm mt-2">{erro}</p>}
     </main>
   )
+}
+
+export default function AgendarClientPage() {
+  return (
+    <Suspense fallback={<div className="p-4 text-center">Carregando...</div>}>
+      <AgendarClientContent />
+    </Suspense>
+  )
+}
+
+type Servico = {
+  id: string
+  nome: string
+  descricao: string
+  valor: number
 }
