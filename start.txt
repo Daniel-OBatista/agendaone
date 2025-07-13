@@ -1,0 +1,10 @@
+Na pasta dp arquivo abra via cmd ou no cmd digite D:\0. Meus Documentos\Cursos\Curso Front-End\estudio-unhas>
+
+Em seguida, digite npm run dev, ou no propio termial do arquivo visual studio
+
+Para atualizar arquivos via vercell, digite no visual studio
+git add .
+git commit -m "Projeto - versão1.35"
+git push origin main
+
+pronto
