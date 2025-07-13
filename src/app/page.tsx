@@ -1,22 +1,23 @@
 export default function Home() {
   return (
-    <main className="flex min-h-screen flex-col items-center justify-center sm:justify-center bg-pink-50 text-center px-4 pt-24 sm:pt-0">
-      <div className="mb-6 text-center">
-    <h1 className="text-3xl font-bold text-pink-700">Estúdio de Unhas</h1>
-    <div className="w-40 h-1 bg-pink-400 mx-auto my-2 rounded" />
-    <p className="text-lg text-pink-600 flex items-center justify-center gap-2">
-      <svg
-        xmlns="http://www.w3.org/2000/svg"
-        className="w-5 h-5 text-pink-500"
-        fill="none"
-        viewBox="0 0 24 24"
-        stroke="currentColor"
-      >
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10m-7 4h4m-6 4h8" />
-    </svg>
-    Agendamento Online
-  </p>
-</div>
+    <main className="flex min-h-screen bg-pink-50 text-center px-4">
+    <div className="flex flex-col items-center justify-center my-auto w-full">
+      <div className="mb-6">
+        <h1 className="text-3xl font-bold text-pink-700">Estúdio de Unhas</h1>
+        <div className="w-40 h-1 bg-pink-400 mx-auto my-2 rounded" />
+        <p className="text-lg text-pink-600 flex items-center justify-center gap-2">
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            className="w-5 h-5 text-pink-500"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+          >
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10m-7 4h4m-6 4h8" />
+          </svg>
+          Agendamento Online
+        </p>
+      </div>
 
       <div className="flex gap-4">
         <a
@@ -32,6 +33,8 @@ export default function Home() {
           Cadastro
         </a>
       </div>
-    </main>
+    </div>
+  </main>
+
   );
 }
