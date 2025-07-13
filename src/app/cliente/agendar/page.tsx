@@ -63,11 +63,17 @@ export default function AgendarPage() {
     const fim = new Date(`${data}T23:59:59`).toISOString()
 
     const { data: agendamentos, error } = await supabase
-      .from('appointments')
-      .select('data_hora')
-      .eq('service_id', servicoId)
-      .gte('data_hora', inicio)
-      .lte('data_hora', fim)
+    .from('appointments')
+    .select('data_hora')
+    .eq('service_id', servicoId)
+    .gte('data_hora', inicio)
+    .lte('data_hora', fim)
+
+    if (error) {
+      console.error('Erro ao buscar horários disponíveis:', error.message)
+      return
+    }
+
 
     const horariosOcupados = agendamentos?.map(a =>
       new Date(a.data_hora).toISOString().slice(11, 16)
