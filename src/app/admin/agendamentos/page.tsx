@@ -141,7 +141,7 @@ export default function AgendamentosAdminPage() {
   }
 
   return (
-    <main className="min-h-screen bg-pink-50 text-zinc-800 px-20 py-10 text-sm">
+    <main className="min-h-screen bg-pink-50 text-zinc-800 px-4 sm:px-8 md:px-12 lg:px-20 py-10 text-sm">
     <div className="mb-4 flex items-center justify-start gap-4">
     <button
         onClick={() => router.push('/admin')}
