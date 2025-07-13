@@ -4,7 +4,7 @@ import { useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { supabase } from '../lib/supabaseClient'
 import { useRouter } from 'next/navigation'
-import { Home, Search } from 'lucide-react'
+import { Home } from 'lucide-react'
 
 type FormularioCadastro = {
   nome: string
