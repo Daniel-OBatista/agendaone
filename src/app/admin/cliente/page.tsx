@@ -85,59 +85,31 @@ export default function ClientesAdminPage() {
 
       {erro && <p className="text-red-500 mb-4">{erro}</p>}
 
-      <div className="space-y-4">
-  {/* TABELA para telas grandes */}
-  <table className="hidden sm:table w-full border-collapse bg-white shadow-sm rounded overflow-hidden text-sm">
-    <thead className="bg-pink-100 text-pink-800">
-      <tr>
-        <th className="p-3 text-left">Nome</th>
-        <th className="p-3 text-left">Telefone</th>
-        <th className="p-3 text-left">Últ. Agend.</th>
-      </tr>
-    </thead>
-    <tbody>
-      {usuarios.map((user) => (
-        <tr key={user.id} className="border-t hover:bg-pink-50">
-          <td className="p-3">{user.nome}</td>
-          <td className="p-3">{user.telefone || '—'}</td>
-          <td className="p-3">
-            {user.ultimo_agendamento
-              ? new Date(user.ultimo_agendamento).toLocaleString('pt-BR', {
-                  dateStyle: 'short',
-                  timeStyle: 'short',
-                })
-              : '—'}
-          </td>
+      <table className="w-full border-collapse bg-white shadow-sm rounded overflow-hidden text-sm">
+      <thead className="bg-pink-100 text-pink-800">
+        <tr>
+          <th className="p-3 text-left">Nome</th>
+          <th className="p-3 text-left">Telefone</th>
+          <th className="p-3 text-left">Últ. Agend.</th>
         </tr>
-      ))}
-    </tbody>
-  </table>
-
-  {/* CARDS para telas pequenas */}
-  <div className="sm:hidden space-y-3">
-    {usuarios.map((user) => (
-      <div
-        key={user.id}
-        className="bg-white shadow-sm rounded p-3 border border-pink-100 space-y-1"
-      >
-    
-        <p className="text-pink-600 font-semibold">{user.nome}</p>
-        <p className="text-sm text-zinc-600">
-          📞 {user.telefone || '—'}
-        </p>
-        <p className="text-sm text-zinc-600">
-          📅{' '}
-          {user.ultimo_agendamento
-            ? new Date(user.ultimo_agendamento).toLocaleString('pt-BR', {
-                dateStyle: 'short',
-                timeStyle: 'short',
-              })
-            : 'Sem agendamentos'}
-        </p>
-      </div>
-    ))}
-  </div>
-</div>
+      </thead>
+      <tbody>
+        {usuarios.map((user) => (
+          <tr key={user.id} className="border-t hover:bg-pink-50">
+            <td className="p-3">{user.nome}</td>
+            <td className="p-3">{user.telefone || '—'}</td>
+            <td className="p-3">
+              {user.ultimo_agendamento
+                ? new Date(user.ultimo_agendamento).toLocaleString('pt-BR', {
+                    dateStyle: 'short',
+                    timeStyle: 'short',
+                  })
+                : '—'}
+            </td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
 
     </main>
   )
