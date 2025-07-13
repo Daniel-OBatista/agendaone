@@ -5,6 +5,7 @@ import { supabase } from '../../lib/supabaseClient'
 import { useRouter } from 'next/navigation'
 import { Home } from 'lucide-react'
 import ImageCropper from '../../../../utils/ImageCropper'
+import Image from 'next/image'
 
 export default function ServicosAdminPage() {
   type Servico = {
@@ -308,11 +309,13 @@ export default function ServicosAdminPage() {
         {servicosFiltrados.map((s) => (
           <div key={s.id} className="bg-white p-3 rounded-md shadow-sm border border-pink-100">
             {s.imagem_url && (
-              <img
-                src={s.imagem_url}
-                alt={s.nome}
-                className="w-[320px] h-[130px] object-contain rounded mb-2 mx-auto bg-zinc-100"
-              />
+              <Image
+              src={s.imagem_url}
+              alt={s.nome}
+              width={320}
+              height={130}
+              className="rounded mb-2 mx-auto bg-zinc-100 object-contain"
+            />
             )}
             <p className="font-semibold text-pink-600">{s.nome}</p>
             <p className="text-xs text-zinc-600">{s.descricao}</p>
