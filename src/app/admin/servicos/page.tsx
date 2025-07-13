@@ -184,7 +184,7 @@ export default function ServicosAdminPage() {
   )
 
   return (
-    <main className="min-h-screen bg-pink-50 text-zinc-800 px-20 py-10 text-sm">
+    <main className="min-h-screen bg-pink-50 text-zinc-800 px-4 sm:px-8 md:px-12 lg:px-20 py-10 text-sm">
       {imagemParaRecorte && (
         <ImageCropper
           imageSrc={imagemParaRecorte}
