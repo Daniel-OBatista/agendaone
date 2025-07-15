@@ -1,4 +1,3 @@
-
 'use client'
 
 import { useEffect, useState } from 'react'
@@ -62,25 +61,24 @@ export default function AgendamentosAdminPage() {
     }
 
     async function fetchAgendamentos() {
-        const { data, error } = await supabase
-          .from('appointments')
-          .select(`
-            id,
-            data_hora,
-            status,
-            users!fk_usuario(nome),
-            services(nome)
+      const { data, error } = await supabase
+        .from('appointments')
+        .select(`
+          id,
+          data_hora,
+          status,
+          users!fk_usuario(nome),
+          services(nome)
         `)
+        .order('data_hora', { ascending: true })
 
-          .order('data_hora', { ascending: true })
-      
-        if (error) {
-          setErro(error.message)
-        } else {
-          setAgendamentos(data as AgendamentoCompleto[])
-        }
-        setCarregando(false)
-      }     
+      if (error) {
+        setErro(error.message)
+      } else {
+        setAgendamentos(data as AgendamentoCompleto[])
+      }
+      setCarregando(false)
+    }
 
     verificarAdmin()
   }, [router])
@@ -141,20 +139,63 @@ export default function AgendamentosAdminPage() {
   }
 
   return (
-    <main className="min-h-screen bg-pink-50 text-zinc-800 px-4 sm:px-8 md:px-12 lg:px-20 py-10 text-sm">
-    <div className="mb-4 flex items-center justify-start gap-4">
-    <button
-        onClick={() => router.push('/admin')}
-        className="flex items-center gap-2 text-white bg-pink-500 px-3 py-1.5 rounded-md hover:bg-pink-600 text-sm"
-    >
-        <Home size={18} />
-        Início
-    </button>
+    <main className="min-h-screen bg-gradient-to-br from-pink-50 to-white text-zinc-800 px-4 sm:px-8 md:px-12 lg:px-20 py-10 text-sm">
+      <style>{`
+        @keyframes fade-in {
+          from { opacity: 0; transform: translateY(5px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+        .animate-fade-in {
+          animation: fade-in 0.5s ease-out both;
+        }
+        .react-calendar {
+          border: 2px solid #be185d;
+          background-color: #fff;
+          border-radius: 8px;
+          padding: 8px;
+          width: 100%;
+          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+        .react-calendar__tile {
+          border-radius: 6px;
+          padding: 8px 0;
+          transition: background 0.3s ease, color 0.3s ease;
+        }
+        .react-calendar__tile--now {
+          background: #fde2f3 !important;
+          color: #d63384 !important;
+          font-weight: bold;
+        }
+        .react-calendar__tile--active {
+          background: #ec4899 !important;
+          color: white !important;
+        }
+        .highlight {
+          background: #f472b6 !important;
+          color: white !important;
+          border-radius: 9999px;
+          font-weight: bold;
+        }
+        .react-calendar__month-view__weekdays abbr {
+          text-decoration: none;
+          color: #555;
+          font-weight: 500;
+        }
+      `}</style>
 
-    <h1 className="text-2xl font-bold text-pink-700">📅 Meus atendimentos</h1>
-    </div>
+      <div className="mb-4 flex items-center justify-start gap-4">
+        <button
+          onClick={() => router.push('/admin')}
+          className="flex items-center gap-2 text-white bg-pink-500 px-3 py-1.5 rounded-md hover:bg-pink-600 text-sm"
+        >
+          <Home size={18} />
+          Início
+        </button>
 
-    <hr className="border-t border-pink-300 mb-6" />
+        <h1 className="text-2xl font-bold text-pink-700">📅 Meus Atendimentos</h1>
+      </div>
+
+      <hr className="border-t border-pink-300 mb-6" />
 
       {erro && <p className="text-red-500 mb-4">{erro}</p>}
 
@@ -169,58 +210,18 @@ export default function AgendamentosAdminPage() {
             formatShortWeekday={(locale, date) => format(date, 'EEEEE', { locale: ptBR })}
             formatMonthYear={(locale, date) => format(date, 'MMMM yyyy', { locale: ptBR })}
           />
-          <style>{`
-            .react-calendar {
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-  transition: all 0.3s ease;
-
-              border: 2px solid #be185d;
-              background-color: #fff;
-              border-radius: 8px;
-              padding: 8px;
-              color: #444;
-              width: 100%;
-            }
-            .react-calendar__tile {
-  transition: background 0.3s ease, color 0.3s ease;
-  font-size: 0.9rem;
-
-              border-radius: 6px;
-              padding: 8px 0;
-            }
-            .react-calendar__tile--now {
-              background: #fde2f3 !important;
-              color: #d63384 !important;
-              font-weight: bold;
-            }
-            .react-calendar__tile--active {
-              background: #ec4899 !important;
-              color: white !important;
-            }
-            .highlight {
-              background: #f472b6 !important;
-              color: white !important;
-              border-radius: 9999px;
-              font-weight: bold;
-            }
-            .react-calendar__month-view__weekdays abbr {
-              text-decoration: none;
-              color: #555;
-              font-weight: 500;
-            }
-          `}</style>
         </div>
 
         <div>
-          <h3 className="text-lg font-semibold text-pink-700">⏳ Horários Disponíveis</h3>
+          <h3 className="text-lg font-semibold text-pink-700 mb-2">⏳ Horários Disponíveis</h3>
           {horariosDisponiveis.length === 0 ? (
-            <p className="text-gray-600 mt-2">Nenhum horário disponível.</p>
+            <p className="text-gray-600">Nenhum horário disponível.</p>
           ) : (
-            <div className="flex flex-wrap gap-2 mt-2">
+            <div className="flex flex-wrap gap-2 animate-fade-in">
               {horariosDisponiveis.map((hora) => (
                 <span
                   key={hora}
-                  className="bg-pink-100 text-pink-700 px-3 py-1 rounded-full text-sm font-medium"
+                  className="bg-white border border-pink-300 text-pink-700 px-4 py-1 rounded-full text-sm font-medium shadow hover:shadow-pink-300/50 hover:scale-105 transition-all duration-300"
                 >
                   {hora}
                 </span>
@@ -230,9 +231,8 @@ export default function AgendamentosAdminPage() {
         </div>
       </div>
 
-      {/* Lista de agendamentos abaixo */}
       <div className="mt-10">
-        <h2 className="text-xl font-semibold mb-2 text-pink-700 text-center">
+        <h2 className="text-2xl font-bold mb-1 text-center text-pink-700 tracking-wide border-b border-pink-300 pb-2">
           Agendamentos em {format(dataSelecionada, 'dd/MM/yyyy')}
         </h2>
         <p className="text-sm text-gray-700 text-center mb-4">
@@ -246,7 +246,7 @@ export default function AgendamentosAdminPage() {
         ) : (
           <ul className="flex flex-col gap-4 max-w-xl mx-auto">
             {agendamentosDoDia.map((a) => (
-              <li key={a.id} className="border p-4 rounded bg-white shadow-sm">
+              <li key={a.id} className="border p-4 rounded bg-white/60 backdrop-blur-md shadow-md hover:shadow-lg transition-all">
                 <p><strong>👤 Cliente:</strong> {a.users[0]?.nome || '---'}</p>
                 <p><strong>💅 Serviço:</strong> {a.services[0]?.nome || '---'}</p>
                 <p><strong>🕒 Horário:</strong> {format(new Date(a.data_hora), 'HH:mm')}</p>
@@ -255,7 +255,7 @@ export default function AgendamentosAdminPage() {
                   {a.status !== 'concluído' && (
                     <button
                       onClick={() => atualizarStatus(a.id, 'concluído')}
-                      className="bg-green-500 text-white px-3 py-1 rounded hover:bg-green-600 transition"
+                      className="bg-green-500 text-white px-3 py-1 rounded hover:bg-green-600 transition shadow hover:shadow-green-400/40"
                     >
                       ✅ Concluído
                     </button>
@@ -263,14 +263,14 @@ export default function AgendamentosAdminPage() {
                   {a.status !== 'cancelado' && (
                     <button
                       onClick={() => atualizarStatus(a.id, 'cancelado')}
-                      className="bg-yellow-500 text-white px-3 py-1 rounded hover:bg-yellow-600 transition"
+                      className="bg-yellow-500 text-white px-3 py-1 rounded hover:bg-yellow-600 transition shadow hover:shadow-yellow-400/40"
                     >
                       🚫 Cancelar
                     </button>
                   )}
                   <button
                     onClick={() => excluirAgendamento(a.id)}
-                    className="bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600 transition"
+                    className="bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600 transition shadow hover:shadow-red-400/40"
                   >
                     🗑️ Excluir
                   </button>
