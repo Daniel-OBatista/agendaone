@@ -4,7 +4,7 @@ import { useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { supabase } from '../lib/supabaseClient'
 import { useRouter } from 'next/navigation'
-import { Home } from 'lucide-react'
+import { ArrowLeft } from 'lucide-react'
 
 type FormularioCadastro = {
   nome: string
@@ -67,17 +67,20 @@ export default function CadastroPage() {
 
   return (
     <main className="min-h-screen bg-pink-50 flex items-center justify-center px-4">
-      <div className="w-full max-w-md bg-white p-6 rounded shadow-md">
-        <div className="mb-4">
+      <div className="w-full max-w-md bg-white p-6 rounded shadow-md relative">
+        {/* Botão voltar + título centralizado */}
+        <div className="relative mb-6 flex justify-center items-center">
           <button
-            onClick={() => router.push('/admin')}
-            className="flex items-center gap-2 text-white bg-pink-500 px-3 py-1.5 rounded-md hover:bg-pink-600 text-sm"
+            onClick={() => router.push('/')}
+            className="absolute left-0 text-pink-500 hover:text-pink-700 transition-colors"
+            aria-label="Voltar"
           >
-            <Home size={18} />
-            Início do Admin
+            <ArrowLeft size={24} />
           </button>
+          <h1 className="text-2xl font-bold text-pink-700 text-center">🎀 Cadastro</h1>
         </div>
-        <h2 className="text-2xl font-bold text-pink-700 mb-6 text-center">🎀 Cadastro</h2>
+
+        {/* Formulário */}
         <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4">
           <input
             {...register('nome')}

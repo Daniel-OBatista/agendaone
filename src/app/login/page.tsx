@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { supabase } from '../lib/supabaseClient'
 import { useRouter } from 'next/navigation'
+import { ArrowLeft } from 'lucide-react'
 
 type FormularioLogin = {
   email: string
@@ -51,7 +52,22 @@ export default function LoginPage() {
   return (
     <main className="min-h-screen bg-pink-50 flex items-center justify-center px-4">
       <div className="w-full max-w-md bg-white p-6 rounded shadow-md">
-        <h2 className="text-2xl font-bold text-pink-700 mb-6 text-center">🎀 Login</h2>
+        {/* Cabeçalho com botão e título centralizado */}
+        <div className="relative mb-6 flex justify-center items-center">
+          {/* Botão absoluto alinhado à esquerda */}
+          <button
+            onClick={() => router.push('/')}
+            className="absolute left-0 text-pink-500 hover:text-pink-700 transition-colors"
+            aria-label="Voltar"
+          >
+            <ArrowLeft size={24} />
+          </button>
+
+          {/* Título centralizado na linha */}
+          <h2 className="text-2xl font-bold text-pink-700 text-center">🎀 Login</h2>
+        </div>
+
+        {/* Formulário */}
         <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4">
           <input
             {...register('email')}
