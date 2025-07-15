@@ -26,18 +26,115 @@ body {
 }
 
 .react-calendar {
+  background: linear-gradient(135deg, #ffffff, #fff0f5);
+  backdrop-filter: blur(12px);
+  border: 2px solid #f9a8d4;
+  border-radius: 24px;
+  padding: 20px;
   font-family: 'Inter', sans-serif;
-  border: none;
+  box-shadow: 0 10px 10px rgba(236, 72, 153, 0.3);
+  transition: all 0.2s ease;
+  position: relative;
 }
 
-.react-calendar__tile--active {
-  background-color: #ec4899 !important;
-  color: white !important;
-  border-radius: 8px;
+.react-calendar:hover {
+  box-shadow: 0 0 40px rgba(236, 72, 153, 0.4);
+  transform: scale(1.01);
 }
 
-.react-calendar__tile--now {
-  background-color: #fce7f3;
+/* Cantos decorativos com brilho */
+.react-calendar::before {
+  content: '';
+  position: absolute;
+  top: -6px;
+  left: -6px;
+  right: -6px;
+  bottom: -6px;
+  border-radius: 30px;
+  background: linear-gradient(135deg, rgba(236, 72, 153, 0.2), rgba(255, 255, 255, 0));
+  z-index: -1;
+  box-shadow: 0 0 50px rgba(236, 72, 153, 0.2);
+}
+
+/* Navegação (topo do calendário) */
+.react-calendar__navigation {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+
+.react-calendar__navigation button {
+  background: none;
+  color: #be185d;
+  font-weight: 700;
+  font-size: 1rem;
+  padding: 6px 10px;
+  border-radius: 10px;
+  transition: background 0.2s, transform 0.2s;
+}
+
+.react-calendar__navigation button:hover {
+  background: #fce7f3;
+  transform: scale(1.05);
+}
+
+/* Dias da semana */
+.react-calendar__month-view__weekdays {
+  text-transform: uppercase;
+  font-weight: 600;
+  font-size: 0.75rem;
   color: #9d174d;
-  border-radius: 8px;
+  margin-bottom: 4px;
+}
+
+/* Tiles (dias) */
+.react-calendar__tile {
+  background: none;
+  border: none;
+  padding: 10px 0;
+  border-radius: 12px;
+  color: #333;
+  font-weight: 500;
+  transition: all 0.2s ease;
+}
+
+.react-calendar__tile:enabled:hover {
+  background: #f9a8d4;
+  color: white;
+  transform: scale(1.1);
+}
+
+/* Hoje */
+.react-calendar__tile--now {
+  background: #f472b6 !important;
+  color: white !important;
+  font-weight: bold;
+  border-radius: 50%;
+}
+
+/* Dia selecionado */
+.react-calendar__tile--active {
+  background: #db2777 !important;
+  color: white !important;
+  border-radius: 50%;
+}
+
+/* Dias com agendamentos */
+.react-calendar__tile.highlight {
+  background: #fde68a !important;
+  color: #7c2d12;
+  font-weight: bold;
+  border-radius: 50%;
+  position: relative;
+}
+
+.react-calendar__tile.highlight::after {
+  content: '•';
+  color: #b91c1c;
+  font-size: 1.2rem;
+  position: absolute;
+  bottom: 4px;
+  left: 0;
+  right: 0;
+  text-align: center;
 }

@@ -229,11 +229,12 @@ export default function AgendamentosAdminPage() {
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 animate-fade-in">
               {horariosDisponiveis.map((hora) => (
                 <span
-                  key={hora}
-                  className="bg-white border border-pink-300 text-pink-700 px-4 py-1 rounded-full text-sm font-medium shadow hover:shadow-pink-300/50 hover:scale-105 transition-all duration-300"
-                >
-                  {hora}
-                </span>
+                key={hora}
+                className="bg-white border border-pink-300 text-pink-700 px-4 py-[6px] rounded-full text-sm font-medium shadow hover:shadow-pink-300/50 hover:scale-105 transition-all duration-300 text-center leading-tight flex items-center justify-center"
+              >
+                {hora}
+              </span>
+              
               ))}
             </div>
           )}
@@ -241,13 +242,15 @@ export default function AgendamentosAdminPage() {
           {/* Foto do operador */}
         <div className="flex justify-center items-start">
         <div className="flex justify-center items-start">
-          {operadorSelecionado !== 'todos' && (
-            <img
-            src={operadores.find((o) => o.id === operadorSelecionado)?.foto_url || ''}
+          <img
+            src={
+              operadorSelecionado === 'todos'
+                ? '/logo.png' // substitua pelo caminho da sua imagem padrão
+                : operadores.find((o) => o.id === operadorSelecionado)?.foto_url || '/logo.png'
+            }
             alt="Foto do operador"
             className="w-full max-w-md h-[280px] object-cover rounded-lg shadow-xl bg-zinc-100 mx-auto mt-4"
-          />          
-          )}
+          />
         </div>
 
         </div>
