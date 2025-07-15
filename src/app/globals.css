@@ -24,3 +24,20 @@ body {
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
+
+.react-calendar {
+  font-family: 'Inter', sans-serif;
+  border: none;
+}
+
+.react-calendar__tile--active {
+  background-color: #ec4899 !important;
+  color: white !important;
+  border-radius: 8px;
+}
+
+.react-calendar__tile--now {
+  background-color: #fce7f3;
+  color: #9d174d;
+  border-radius: 8px;
+}

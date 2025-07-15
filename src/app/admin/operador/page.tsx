@@ -99,7 +99,7 @@ export default function OperadoresAdminPage() {
       email,
       telefone,
       servico_ids: servicoSelecionado,
-      foto_url: foto_url || null,
+      foto_url: foto_url || fotoPreview || null,
     }
 
     if (modoEdicao && idEditando) {
@@ -290,7 +290,7 @@ export default function OperadoresAdminPage() {
               <img
                 src={o.foto_url}
                 alt={o.nome}
-                className="w-[320px] h-[130px] object-contain rounded mb-2 mx-auto bg-zinc-100"
+                className="w-[340px] h-[240px] object-contain rounded mb-2 mx-auto bg-zinc-100"
               />
             )}
             <p className="font-semibold text-pink-600">{o.nome}</p>

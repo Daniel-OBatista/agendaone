@@ -32,7 +32,7 @@ export default function ImageCropper({
             image={imageSrc}
             crop={crop}
             zoom={zoom}
-            aspect={320 / 130}
+            aspect={340 / 240}
             onCropChange={setCrop}
             onZoomChange={setZoom}
             onCropComplete={(_, area) => setCroppedAreaPixels(area)}
