@@ -37,7 +37,7 @@ export default function Home() {
             animate={{ opacity: 1 }}
             transition={{ delay: 0.3 }}
           >
-            AgendaOne1
+            AgendaOne
           </motion.h1>
 
           <div className="w-24 h-1 bg-pink-400 mx-auto mb-4 rounded-full" />
