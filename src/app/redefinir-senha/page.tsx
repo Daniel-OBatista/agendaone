@@ -1,9 +1,9 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { supabase } from '../lib/supabaseClient'
-import { useRouter, useSearchParams } from 'next/navigation'
+import { useRouter } from 'next/navigation'
 import { ArrowLeft, Eye, EyeOff } from 'lucide-react'
 import { motion } from 'framer-motion'
 
@@ -12,14 +12,13 @@ type FormularioSenha = {
   confirmarSenha: string
 }
 
-export default function RedefinirSenhaPage() {
+export default function CadastroPage() {
   const { register, handleSubmit, watch, formState: { errors } } = useForm<FormularioSenha>()
   const [erro, setErro] = useState('')
   const [carregando, setCarregando] = useState(false)
   const [mostrarSenha, setMostrarSenha] = useState(false)
   const [mostrarConfirmar, setMostrarConfirmar] = useState(false)
   const router = useRouter()
-  const params = useSearchParams()
 
   const onSubmit = async (data: FormularioSenha) => {
     setErro('')
@@ -27,22 +26,16 @@ export default function RedefinirSenhaPage() {
 
     const { senha } = data
 
-    const { error: updateError } = await supabase.auth.updateUser({ password: senha })
-
-    if (updateError) {
-      setErro('Erro ao redefinir senha: ' + updateError.message)
+    // Simula cadastro (substitua por lógica real se necessário)
+    setTimeout(() => {
       setCarregando(false)
-      return
-    }
-
-    setCarregando(false)
-    router.push('/login')
+      router.push('/login') // redireciona após "cadastro"
+    }, 2000)
   }
 
   return (
     <main className="min-h-screen bg-pink-50 flex items-center justify-center px-4">
       <div className="w-full max-w-md bg-white/80 backdrop-blur-sm border border-white/30 ring-2 ring-pink-300/30 p-6 rounded-3xl shadow-2xl">
-        {/* Cabeçalho */}
         <div className="relative mb-6 flex justify-center items-center">
           <button
             onClick={() => router.push('/')}
@@ -51,7 +44,7 @@ export default function RedefinirSenhaPage() {
           >
             <ArrowLeft size={24} />
           </button>
-          <h1 className="text-2xl font-bold text-pink-700 text-center">🎀 Redefinir Senha</h1>
+          <h1 className="text-2xl font-bold text-pink-700 text-center">🎀 Criar Senha</h1>
         </div>
 
         <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4">
@@ -60,7 +53,7 @@ export default function RedefinirSenhaPage() {
             <input
               {...register('senha', { required: 'A senha é obrigatória' })}
               type={mostrarSenha ? 'text' : 'password'}
-              placeholder="Nova senha"
+              placeholder="Digite sua senha"
               className="w-full border border-pink-200 p-2 rounded text-zinc-800 placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-pink-400"
             />
             <button
@@ -81,7 +74,7 @@ export default function RedefinirSenhaPage() {
                 validate: (value) => value === watch('senha') || 'As senhas não coincidem',
               })}
               type={mostrarConfirmar ? 'text' : 'password'}
-              placeholder="Confirmar nova senha"
+              placeholder="Confirmar senha"
               className="w-full border border-pink-200 p-2 rounded text-zinc-800 placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-pink-400"
             />
             <button
@@ -115,18 +108,17 @@ export default function RedefinirSenhaPage() {
           <motion.button
             type="submit"
             disabled={carregando}
-            className={`relative flex items-center justify-center font-semibold py-2 rounded-full transition-all duration-300 overflow-hidden
+            className={`relative flex items-center justify-center font-semibold py-3 rounded-full transition-all duration-300 overflow-hidden
               ${carregando ? 'bg-pink-500/60 cursor-wait' : 'bg-gradient-to-r from-pink-500 to-fuchsia-600 hover:from-pink-600 hover:to-fuchsia-700'}
               text-white shadow-lg ring-2 ring-pink-400 hover:scale-105`}
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.98 }}
           >
             <span className="relative z-10 tracking-wide">
-              {carregando ? 'Salvando...' : 'Salvar nova senha'}
+              {carregando ? 'Salvando...' : 'Salvar senha'}
             </span>
           </motion.button>
 
-          {/* Erro */}
           {erro && <p className="text-red-500 text-sm text-center">{erro}</p>}
         </form>
       </div>
