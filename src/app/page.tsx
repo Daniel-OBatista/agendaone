@@ -9,14 +9,14 @@ export default function Home() {
         initial={{ opacity: 0, y: 40 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.8 }}
-        className="relative z-10 backdrop-blur-2xl bg-white/70 shadow-2xl border border-white/30 rounded-3xl ring-2 ring-pink-300/40 max-w-md w-full text-center"
-      >
+        className="relative z-10 backdrop-blur-2xl bg-white/70 shadow-2xl border border-white/30 rounded-3xl ring-2 ring-pink-300/40 max-w-sm w-full text-center"
+        >
         {/* Conteúdo com padding separado */}
         <div className="px-10 py-12">
           <motion.img
             src="/salao.png"
             alt="Logo do Estúdio"
-            className="w-28 h-28 object-contain mx-auto mb-4 rounded-full shadow-xl border border-white/40"
+            className="w-25 h-25 object-contain mx-auto mb-4 rounded-full shadow-xl border border-white/40"
             initial={{ scale: 1, rotate: 0, y: 0 }}
             animate={{
               y: [0, -12, 0],
