@@ -115,7 +115,7 @@ export default function RedefinirSenhaPage() {
           <motion.button
             type="submit"
             disabled={carregando}
-            className={`relative flex items-center justify-center font-semibold py-3 rounded-full transition-all duration-300 overflow-hidden
+            className={`relative flex items-center justify-center font-semibold py-2 rounded-full transition-all duration-300 overflow-hidden
               ${carregando ? 'bg-pink-500/60 cursor-wait' : 'bg-gradient-to-r from-pink-500 to-fuchsia-600 hover:from-pink-600 hover:to-fuchsia-700'}
               text-white shadow-lg ring-2 ring-pink-400 hover:scale-105`}
             whileHover={{ scale: 1.05 }}

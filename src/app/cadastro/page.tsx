@@ -15,7 +15,7 @@ type FormularioCadastro = {
 }
 
 export default function CadastroPage() {
-  const { register, handleSubmit, formState: { errors } } = useForm<FormularioCadastro>()
+  const { register, handleSubmit, formState: { errors }, watch } = useForm<FormularioCadastro>()
   const [erro, setErro] = useState('')
   const [carregando, setCarregando] = useState(false)
   const [telefoneExiste, setTelefoneExiste] = useState(false)
@@ -42,7 +42,7 @@ export default function CadastroPage() {
 
     if (usuarioExiste && usuarioExiste.length > 0) {
       setErro('Este telefone já está cadastrado.')
-      setTelefoneExiste(true)
+      setTelefoneExiste(true) // Atualiza a variável para mostrar o botão
       setCarregando(false)
       return
     }
@@ -71,15 +71,13 @@ export default function CadastroPage() {
 
     const user_id = userData.user.id
 
-    const { error: erroInsert } = await supabase.from('users').insert([
-      {
-        id: user_id,
-        nome,
-        telefone,
-        email: emailFalso,
-        role: 'cliente',
-      }
-    ])
+    const { error: erroInsert } = await supabase.from('users').insert([{
+      id: user_id,
+      nome,
+      telefone,
+      email: emailFalso,
+      role: 'cliente',
+    }])
 
     if (erroInsert) {
       setErro(erroInsert.message)
@@ -88,6 +86,13 @@ export default function CadastroPage() {
     }
 
     setCarregando(false)
+  }
+
+  const handleLoginRedirect = () => {
+    const telefone = watch('telefone') // Agora, você obtém o telefone diretamente do form
+    // Redireciona para a página de login e preenche o número de telefone automaticamente via localStorage
+    localStorage.setItem('telefone', JSON.stringify({ telefone }))
+    router.push('/login')
   }
 
   return (
@@ -144,7 +149,6 @@ export default function CadastroPage() {
             <p className="text-red-500 text-sm">{errors.email.message}</p>
           )}
 
-
           <input
             {...register('senha')}
             type="password"
@@ -175,8 +179,7 @@ export default function CadastroPage() {
             type="submit"
             disabled={carregando}
             className={`relative flex items-center justify-center font-semibold py-2 rounded-full transition-all duration-300 overflow-hidden
-              ${carregando ? 'bg-pink-500/60 cursor-wait' : 'bg-gradient-to-r from-pink-500 to-fuchsia-600 hover:from-pink-600 hover:to-fuchsia-700'}
-              text-white shadow-lg ring-2 ring-pink-400 hover:scale-105`}
+              ${carregando ? 'bg-pink-500/60 cursor-wait' : 'bg-gradient-to-r from-pink-500 to-fuchsia-600 hover:from-pink-600 hover:to-fuchsia-700'}`}
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.98 }}
           >
@@ -188,16 +191,31 @@ export default function CadastroPage() {
           {/* Mensagem de erro */}
           {erro && <p className="text-red-500 text-sm text-center">{erro}</p>}
 
-          {/* Botão para redefinir senha */}
-          <motion.button
-            type="button"
-            onClick={() => router.push('/redefinir-senha')}
-            className="relative flex items-center justify-center font-semibold py-2 rounded-full transition-all duration-300 overflow-hidden bg-gradient-to-r from-pink-500 to-fuchsia-600 hover:from-pink-600 hover:to-fuchsia-700 text-white shadow-lg ring-2 ring-pink-400 hover:scale-105"
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.98 }}
-          >
-            <span className="relative z-10 tracking-wide">🔐 Redefinir senha</span>
-          </motion.button>
+          {/* Botão de login - só aparece se o telefone já estiver cadastrado */}
+          {telefoneExiste && (
+            <motion.button
+              type="button"
+              onClick={handleLoginRedirect}
+              className="relative flex items-center justify-center font-semibold py-2 rounded-full transition-all duration-300 overflow-hidden bg-gradient-to-r from-pink-500 to-fuchsia-600 hover:from-pink-600 hover:to-fuchsia-700 text-white shadow-lg ring-2 ring-pink-400 hover:scale-105"
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.98 }}
+            >
+              <span className="relative z-10 tracking-wide">🔐 Ir para Login</span>
+            </motion.button>
+          )}
+
+          {/* Botão de redefinir senha - só aparece se o telefone já estiver cadastrado */}
+          {telefoneExiste && (
+            <motion.button
+              type="button"
+              onClick={() => router.push('/redefinir-senha')}
+              className="relative flex items-center justify-center font-semibold py-2 rounded-full transition-all duration-300 overflow-hidden bg-gradient-to-r from-pink-500 to-fuchsia-600 hover:from-pink-600 hover:to-fuchsia-700 text-white shadow-lg ring-2 ring-pink-400 hover:scale-105"
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.98 }}
+            >
+              <span className="relative z-10 tracking-wide">🔐 Redefinir senha</span>
+            </motion.button>
+          )}
         </form>
       </div>
     </main>
