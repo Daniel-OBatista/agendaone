@@ -2,35 +2,92 @@
 
 import { useState } from 'react'
 import { useForm } from 'react-hook-form'
-import { supabase } from '../lib/supabaseClient'
 import { useRouter } from 'next/navigation'
-import { ArrowLeft, Eye, EyeOff } from 'lucide-react'
+import { ArrowLeft, Eye, EyeOff, Send } from 'lucide-react'
 import { motion } from 'framer-motion'
 
 type FormularioSenha = {
+  telefone: string
+  codigo: string
   senha: string
   confirmarSenha: string
 }
 
-export default function CadastroPage() {
+export default function NovaSenhaPage() {
   const { register, handleSubmit, watch, formState: { errors } } = useForm<FormularioSenha>()
   const [erro, setErro] = useState('')
   const [carregando, setCarregando] = useState(false)
+  const [enviandoCodigo, setEnviandoCodigo] = useState(false)
+  const [codigoEnviado, setCodigoEnviado] = useState(false)
   const [mostrarSenha, setMostrarSenha] = useState(false)
   const [mostrarConfirmar, setMostrarConfirmar] = useState(false)
   const router = useRouter()
+
+  // Envia código OTP via WhatsApp
+  const handleEnviarCodigo = async () => {
+    setErro('')
+    setCodigoEnviado(false)
+    setEnviandoCodigo(true)
+    const telefone = watch('telefone')
+    if (!telefone || telefone.length < 10) {
+      setErro('Digite um telefone válido para receber o código.')
+      setEnviandoCodigo(false)
+      return
+    }
+
+    const resp = await fetch('/api/enviar-code', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ telefone }),
+    })
+    const data = await resp.json()
+    if (data.ok) {
+      setCodigoEnviado(true)
+    } else {
+      setErro(data.error || 'Erro ao enviar o código')
+    }
+    setEnviandoCodigo(false)
+  }
 
   const onSubmit = async (data: FormularioSenha) => {
     setErro('')
     setCarregando(true)
 
-    const { senha } = data
+    // 1. Valide o código OTP no backend
+    const respValidacao = await fetch('/api/verificar-code', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ telefone: data.telefone, codigo: data.codigo }),
+    })
+    const validacao = await respValidacao.json()
 
-    // Simula cadastro (substitua por lógica real se necessário)
-    setTimeout(() => {
+    if (!validacao.ok) {
+      setErro(validacao.error || 'Código inválido ou expirado')
       setCarregando(false)
-      router.push('/login') // redireciona após "cadastro"
-    }, 2000)
+      return
+    }
+
+    // 2. Troque a senha no Supabase Auth pelo backend
+    // 2. Troque a senha no Supabase Auth pelo backend
+    const respReset = await fetch('/api/redefinir-senha', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        telefone: data.telefone,
+        codigo: data.codigo,
+        senha: data.senha,
+      }),
+    })
+    const reset = await respReset.json()
+
+    if (!reset.ok) {
+      setErro(reset.error || 'Erro ao redefinir a senha')
+      setCarregando(false)
+      return
+    }
+
+    setCarregando(false)
+    router.push('/login')
   }
 
   return (
@@ -44,16 +101,71 @@ export default function CadastroPage() {
           >
             <ArrowLeft size={24} />
           </button>
-          <h1 className="text-2xl font-bold text-pink-700 text-center">🎀 Criar Senha</h1>
+          <h1 className="text-2xl font-bold text-pink-700 text-center">🎀 Nova Senha</h1>
         </div>
 
         <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4">
+          {/* Telefone */}
+          <input
+            {...register('telefone', {
+              required: 'O telefone é obrigatório.',
+              pattern: {
+                value: /^\d{10,11}$/,
+                message: 'Telefone inválido. Ex: 16982025181',
+              },
+            })}
+            placeholder="Telefone com DDD"
+            className="border border-pink-200 p-2 rounded text-zinc-800 placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-pink-400"
+          />
+          {errors.telefone && (
+            <p className="text-red-500 text-sm">{errors.telefone.message}</p>
+          )}
+
+          {/* Código de verificação + botão de envio */}
+          <div className="relative flex items-center">
+            <input
+              {...register('codigo', {
+                required: 'Digite o código recebido no WhatsApp.',
+                pattern: {
+                  value: /^\d{6}$/,
+                  message: 'O código deve ter 6 dígitos.',
+                },
+              })}
+              placeholder="Código de verificação via WhatsApp"
+              className="flex-1 border border-pink-200 p-2 rounded text-zinc-800 placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-pink-400"
+              maxLength={6}
+            />
+            <button
+              type="button"
+              disabled={enviandoCodigo}
+              onClick={handleEnviarCodigo}
+              className="ml-2 px-3 py-2 rounded-full bg-gradient-to-r from-pink-500 to-fuchsia-600 text-white font-semibold flex items-center gap-1 hover:from-pink-600 hover:to-fuchsia-700 transition-all duration-300 ring-2 ring-pink-300 shadow"
+            >
+              {enviandoCodigo ? (
+                <svg className="animate-spin h-5 w-5" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="white" strokeWidth="4" />
+                  <path className="opacity-75" fill="white" d="M4 12a8 8 0 018-8v8z" />
+                </svg>
+              ) : (
+                <>
+                  <Send size={16} /> Enviar código
+                </>
+              )}
+            </button>
+          </div>
+          {errors.codigo && (
+            <p className="text-red-500 text-sm">{errors.codigo.message}</p>
+          )}
+          {codigoEnviado && (
+            <p className="text-green-600 text-sm">Código enviado para seu WhatsApp!</p>
+          )}
+
           {/* Senha */}
           <div className="relative">
             <input
               {...register('senha', { required: 'A senha é obrigatória' })}
               type={mostrarSenha ? 'text' : 'password'}
-              placeholder="Digite sua senha"
+              placeholder="Digite sua nova senha"
               className="w-full border border-pink-200 p-2 rounded text-zinc-800 placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-pink-400"
             />
             <button
@@ -87,7 +199,6 @@ export default function CadastroPage() {
             {errors.confirmarSenha && <p className="text-red-500 text-sm">{errors.confirmarSenha.message}</p>}
           </div>
 
-          {/* Barra de progresso */}
           {carregando && (
             <motion.div
               className="h-1 w-full rounded-full overflow-hidden bg-pink-200 mb-2"
@@ -104,7 +215,6 @@ export default function CadastroPage() {
             </motion.div>
           )}
 
-          {/* Botão */}
           <motion.button
             type="submit"
             disabled={carregando}
@@ -115,7 +225,7 @@ export default function CadastroPage() {
             whileTap={{ scale: 0.98 }}
           >
             <span className="relative z-10 tracking-wide">
-              {carregando ? 'Salvando...' : 'Salvar senha'}
+              {carregando ? 'Salvando...' : 'Salvar nova senha'}
             </span>
           </motion.button>
 
