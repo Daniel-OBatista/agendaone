@@ -1,76 +1,48 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useForm } from 'react-hook-form'
 import { supabase } from '../lib/supabaseClient'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { ArrowLeft, Eye, EyeOff } from 'lucide-react'
 import { motion } from 'framer-motion'
 
-type FormularioLogin = {
-  telefone: string
+type FormularioSenha = {
   senha: string
+  confirmarSenha: string
 }
 
-export default function LoginPage() {
-  const { register, handleSubmit } = useForm<FormularioLogin>()
+export default function RedefinirSenhaPage() {
+  const { register, handleSubmit, watch, formState: { errors } } = useForm<FormularioSenha>()
   const [erro, setErro] = useState('')
   const [carregando, setCarregando] = useState(false)
   const [mostrarSenha, setMostrarSenha] = useState(false)
-  const [mostrarReset, setMostrarReset] = useState(false)
+  const [mostrarConfirmar, setMostrarConfirmar] = useState(false)
   const router = useRouter()
+  const params = useSearchParams()
 
-  const onSubmit = async (data: FormularioLogin) => {
+  const onSubmit = async (data: FormularioSenha) => {
     setErro('')
-    setMostrarReset(false)
     setCarregando(true)
 
-    const { telefone, senha } = data
+    const { senha } = data
 
-    const { data: usuarios, error: erroBusca } = await supabase
-      .from('users')
-      .select('email')
-      .eq('telefone', telefone)
-      .single()
+    const { error: updateError } = await supabase.auth.updateUser({ password: senha })
 
-    if (erroBusca || !usuarios?.email) {
-      setErro('Telefone ou senha digitados inválidos.')
+    if (updateError) {
+      setErro('Erro ao redefinir senha: ' + updateError.message)
       setCarregando(false)
-      setMostrarReset(true)
       return
     }
 
-    const { data: loginData, error } = await supabase.auth.signInWithPassword({
-      email: usuarios.email,
-      password: senha,
-    })
-
-    if (error || !loginData.session) {
-      setErro('Senha incorreta.')
-      setCarregando(false)
-      setMostrarReset(true)
-      return
-    }
-
-    const { data: userData } = await supabase.auth.getUser()
-
-    const { data: perfil } = await supabase
-      .from('users')
-      .select('role')
-      .eq('id', userData.user?.id)
-      .single()
-
-    if (perfil?.role === 'admin') {
-      router.push('/admin')
-    } else {
-      router.push('/cliente')
-    }
+    setCarregando(false)
+    router.push('/login')
   }
 
   return (
     <main className="min-h-screen bg-pink-50 flex items-center justify-center px-4">
       <div className="w-full max-w-md bg-white/80 backdrop-blur-sm border border-white/30 ring-2 ring-pink-300/30 p-6 rounded-3xl shadow-2xl">
-
+        {/* Cabeçalho */}
         <div className="relative mb-6 flex justify-center items-center">
           <button
             onClick={() => router.push('/')}
@@ -79,35 +51,47 @@ export default function LoginPage() {
           >
             <ArrowLeft size={24} />
           </button>
-          <h2 className="text-2xl font-bold text-pink-700 text-center">🎀 Login</h2>
+          <h1 className="text-2xl font-bold text-pink-700 text-center">🎀 Redefinir Senha</h1>
         </div>
 
         <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4">
-          {/* Telefone */}
-          <input
-            {...register('telefone')}
-            type="tel"
-            placeholder="Seu telefone"
-            className="border border-pink-200 p-2 rounded text-zinc-800 placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-pink-400"
-            required
-          />
-
-          {/* Senha com olho */}
+          {/* Senha */}
           <div className="relative">
             <input
-              {...register('senha')}
+              {...register('senha', { required: 'A senha é obrigatória' })}
               type={mostrarSenha ? 'text' : 'password'}
-              placeholder="Senha"
+              placeholder="Nova senha"
               className="w-full border border-pink-200 p-2 rounded text-zinc-800 placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-pink-400"
-              required
             />
             <button
               type="button"
-              onClick={() => setMostrarSenha(!mostrarSenha)}
               className="absolute right-2 top-2 text-zinc-500"
+              onClick={() => setMostrarSenha(!mostrarSenha)}
             >
               {mostrarSenha ? <EyeOff size={20} /> : <Eye size={20} />}
             </button>
+            {errors.senha && <p className="text-red-500 text-sm">{errors.senha.message}</p>}
+          </div>
+
+          {/* Confirmar senha */}
+          <div className="relative">
+            <input
+              {...register('confirmarSenha', {
+                required: 'Confirme a senha',
+                validate: (value) => value === watch('senha') || 'As senhas não coincidem',
+              })}
+              type={mostrarConfirmar ? 'text' : 'password'}
+              placeholder="Confirmar nova senha"
+              className="w-full border border-pink-200 p-2 rounded text-zinc-800 placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-pink-400"
+            />
+            <button
+              type="button"
+              className="absolute right-2 top-2 text-zinc-500"
+              onClick={() => setMostrarConfirmar(!mostrarConfirmar)}
+            >
+              {mostrarConfirmar ? <EyeOff size={20} /> : <Eye size={20} />}
+            </button>
+            {errors.confirmarSenha && <p className="text-red-500 text-sm">{errors.confirmarSenha.message}</p>}
           </div>
 
           {/* Barra de progresso */}
@@ -127,7 +111,7 @@ export default function LoginPage() {
             </motion.div>
           )}
 
-          {/* Botão de login */}
+          {/* Botão */}
           <motion.button
             type="submit"
             disabled={carregando}
@@ -137,32 +121,13 @@ export default function LoginPage() {
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.98 }}
           >
-            {carregando && (
-              <motion.div
-                className="absolute inset-0 bg-gradient-to-r from-white/10 via-pink-200/30 to-white/10 animate-pulse"
-                initial={{ opacity: 0.4 }}
-                animate={{ opacity: [0.4, 0.7, 0.4] }}
-                transition={{ repeat: Infinity, duration: 1.2, ease: 'easeInOut' }}
-              />
-            )}
             <span className="relative z-10 tracking-wide">
-              {carregando ? 'Entrando...' : 'Entrar'}
+              {carregando ? 'Salvando...' : 'Salvar nova senha'}
             </span>
           </motion.button>
 
           {/* Erro */}
-          {erro && <p className="text-red-500 text-sm text-center mt-1">{erro}</p>}
-
-          {/* Botão de redefinir senha */}
-          {mostrarReset && (
-            <button
-              type="button"
-              onClick={() => router.push('/redefinir-senha')}
-              className="mt-4 py-3 px-4 rounded-full bg-gradient-to-r from-pink-400 to-fuchsia-500 text-white font-semibold shadow-md hover:from-pink-500 hover:to-fuchsia-600 transition-all duration-300"
-  >
-              🔐 Redefinir senha
-            </button>
-          )}
+          {erro && <p className="text-red-500 text-sm text-center">{erro}</p>}
         </form>
       </div>
     </main>
