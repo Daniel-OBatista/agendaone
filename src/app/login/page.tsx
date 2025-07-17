@@ -8,7 +8,7 @@ import { ArrowLeft, Eye, EyeOff } from 'lucide-react'
 import { motion } from 'framer-motion'
 
 type FormularioLogin = {
-  telefone: string
+  email: string
   senha: string
 }
 
@@ -24,46 +24,30 @@ export default function LoginPage() {
     setErro('')
     setMostrarReset(false)
     setCarregando(true)
-  
-    const { telefone, senha } = data
-  
-    // Padroniza o telefone antes da consulta
-    const telefonePadrao = telefone.replace(/\D/g, '')
-    const telefoneCompleto = telefonePadrao.startsWith('55') ? `+${telefonePadrao}` : `+55${telefonePadrao}`
-  
-    const { data: usuarios, error: erroBusca } = await supabase
-      .from('users')
-      .select('email')
-      .eq('telefone', telefoneCompleto) // ✅ telefone padronizado corretamente
-      .single()
-  
-    if (erroBusca || !usuarios?.email) {
-      setErro('Telefone ou senha digitados inválidos.')
-      setCarregando(false)
-      setMostrarReset(true)
-      return
-    }
-  
+
+    const { email, senha } = data
+
+    // Autenticação direta com e-mail e senha no Supabase
     const { data: loginData, error } = await supabase.auth.signInWithPassword({
-      email: usuarios.email,
+      email,
       password: senha,
     })
-  
+
     if (error || !loginData.session) {
-      setErro('Senha incorreta.')
+      setErro('E-mail ou senha incorretos.')
       setCarregando(false)
       setMostrarReset(true)
       return
     }
-  
+
+    // Busca o perfil para redirecionar corretamente
     const { data: userData } = await supabase.auth.getUser()
-  
     const { data: perfil } = await supabase
       .from('users')
       .select('role')
       .eq('id', userData.user?.id)
       .single()
-  
+
     if (perfil?.role === 'admin') {
       router.push('/admin')
     } else {
@@ -87,11 +71,11 @@ export default function LoginPage() {
         </div>
 
         <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4">
-          {/* Telefone */}
+          {/* E-mail */}
           <input
-            {...register('telefone')}
-            type="tel"
-            placeholder="Seu telefone"
+            {...register('email')}
+            type="email"
+            placeholder="Seu e-mail"
             className="border border-pink-200 p-2 rounded text-zinc-800 placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-pink-400"
             required
           />
@@ -163,7 +147,7 @@ export default function LoginPage() {
               type="button"
               onClick={() => router.push('/redefinir-senha')}
               className="mt-4 py-2 px-4 rounded-full bg-gradient-to-r from-pink-400 to-fuchsia-500 text-white font-semibold shadow-md hover:from-pink-500 hover:to-fuchsia-600 transition-all duration-300"
-  >
+            >
               🔐 Redefinir senha
             </button>
           )}

@@ -1,24 +1,27 @@
 import { NextResponse } from 'next/server'
 import { supabase } from '../../lib/supabaseClient'
+import nodemailer from 'nodemailer'
 
-function formatarTelefone(telefone) {
-  telefone = telefone.replace(/\D/g, '')
-  telefone = telefone.startsWith('55') ? telefone : `55${telefone}`
-  return `+${telefone}`
-}
+// Configura seu provedor de e-mail em variáveis de ambiente
+const transporter = nodemailer.createTransport({
+  service: 'gmail', // ou outro serviço SMTP
+  auth: {
+    user: process.env.EMAIL_USER,
+    pass: process.env.EMAIL_PASS,
+  },
+})
 
 export async function POST(req) {
-  const { telefone } = await req.json()
+  const { email } = await req.json()
 
-  if (!telefone) return NextResponse.json({ ok: false, error: 'Telefone obrigatório' })
+  if (!email) return NextResponse.json({ ok: false, error: 'E-mail obrigatório' })
 
-  const telefoneCompleto = formatarTelefone(telefone)
   const codigoGerado = Math.floor(100000 + Math.random() * 900000).toString()
 
   // 1. Salva o código no Supabase
   const { error } = await supabase.from('otp_codes').insert([
     {
-      telefone: telefoneCompleto,
+      email,
       codigo: codigoGerado,
       expires_at: new Date(Date.now() + 5 * 60 * 1000).toISOString(),
       usado: false,
@@ -29,22 +32,33 @@ export async function POST(req) {
     return NextResponse.json({ ok: false, error: error.message })
   }
 
-  // 2. Envia via WhatsApp chamando seu BOT local (porta 3001)
-  try {
-    const numeroSemPrefixo = telefoneCompleto.replace('+', '') // ex: 5516992689921
+  // 2. Envia o e-mail
+    try {
+      await transporter.sendMail({
+        from: `"AgendaONE" <${process.env.EMAIL_USER}>`,
+        to: email,
+        subject: 'AgendaOne - Código de verificação',
+        text: `Olá!\n\nVocê solicitou um código de verificação para redefinição de senha no agendaONE.\n\nSeu código é: ${codigoGerado}\n\nSe você não solicitou, apenas ignore este e-mail.\n\nAtenciosamente,\nEquipe agendaONE`,
+        html: `
+          <div style="font-family: Arial, sans-serif; color:#333;">
+            <h1 style="color:#d946ef; margin-bottom: 8px;">agendaONE</h1>
+            <p>Você solicitou um código de verificação para acessar sua conta ou redefinir sua senha.</p>
+            <p style="margin: 24px 0; font-size: 1.1rem;">
+              <b>Seu código de verificação:</b>
+            </p>
+            <div style="font-size:2rem; font-weight:bold; background:#f9e8fd; padding:18px 32px; border-radius:16px; display:inline-block; letter-spacing:6px; color:#d946ef; margin-bottom:16px;">
+              ${codigoGerado}
+            </div>
+            <p style="margin-top:24px;">Se você não fez essa solicitação, pode ignorar este e-mail.</p>
+            <hr style="margin:32px 0;">
+            <small style="color:#888;">Equipe agendaONE • Não responda este e-mail</small>
+          </div>
+        `,
+      })
+      return NextResponse.json({ ok: true, mensagem: 'Código enviado por e-mail!' })
+    } catch (err) {
+      console.error('Erro ao enviar e-mail:', err)
+      return NextResponse.json({ ok: false, error: 'Erro ao enviar e-mail' })
+    }
 
-    await fetch('http://localhost:3001/enviar-codigo', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        telefone: numeroSemPrefixo, // sem + no início
-        codigo: codigoGerado,
-      }),
-    })
-
-    return NextResponse.json({ ok: true, mensagem: 'Código enviado com sucesso!' })
-  } catch (err) {
-    console.error('Erro ao chamar o bot do WhatsApp:', err)
-    return NextResponse.json({ ok: false, error: 'Erro ao enviar mensagem via WhatsApp' })
-  }
 }
