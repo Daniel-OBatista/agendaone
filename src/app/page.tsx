@@ -6,13 +6,6 @@ export default function Home() {
   return (
     <main className="relative min-h-screen flex items-center justify-center bg-pink-100 overflow-hidden">
 
-      {/* Fundo animado com partículas */}
-      <div className="absolute inset-0 z-0 overflow-hidden">
-        <div className="absolute top-10 left-10 w-40 h-40 bg-pink-300 rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-pulse" />
-        <div className="absolute bottom-10 right-10 w-48 h-48 bg-fuchsia-400 rounded-full mix-blend-multiply filter blur-2xl opacity-20 animate-pulse" />
-        <div className="absolute top-1/3 left-1/3 w-24 h-24 bg-rose-300 rounded-full mix-blend-multiply filter blur-2xl opacity-30 animate-bounce" />
-      </div>
-
       {/* Cartão central com glassmorphism */}
       <motion.div
         initial={{ opacity: 0, y: 40 }}
@@ -25,19 +18,19 @@ export default function Home() {
           src="/salao.png"
           alt="Logo do Estúdio"
           className="w-28 h-28 object-contain mx-auto mb-4 rounded-full shadow-xl border border-white/40"
-          initial={{ scale: 1, rotate: 0, y: 0, boxShadow: '0 0 0px #f472b6' }}
+          initial={{ scale: 1, rotate: 0, y: 0 }}
           animate={{
-            y: [0, -5, 0],
-            rotate: [0, 2, -2, 0],
-            scale: [1, 1.05, 1],
+            y: [0, -12, 0],
+            rotate: [0, 5, -5, 0],
+            scale: [1, 1.12, 1],
             boxShadow: [
-              '0 0 10px #f472b6',
-              '0 0 15px #ec4899',
-              '0 0 10px #f472b6'
+              '0 0 12px #f472b6',
+              '0 0 20px #ec4899',
+              '0 0 12px #f472b6'
             ]
           }}
           transition={{
-            duration: 4,
+            duration: 3,
             repeat: Infinity,
             ease: "easeInOut"
           }}
