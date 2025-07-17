@@ -14,6 +14,13 @@ type FormularioCadastro = {
   telefone: string
 }
 
+// Função para padronizar telefone antes de salvar no banco
+function formatarTelefone(telefone: string) {
+  telefone = telefone.replace(/\D/g, '')
+  telefone = telefone.startsWith('55') ? telefone : `55${telefone}`
+  return `+${telefone}`
+}
+
 export default function CadastroPage() {
   const { register, handleSubmit, formState: { errors } } = useForm<FormularioCadastro>()
   const [erro, setErro] = useState('')
@@ -28,11 +35,14 @@ export default function CadastroPage() {
 
     const { nome, email, senha, telefone } = data
 
-    // Verifica se o telefone já está cadastrado
+    // Padroniza telefone
+    const telefonePadrao = formatarTelefone(telefone)
+
+    // Verifica se o telefone já está cadastrado com telefone formatado
     const { data: usuarioExiste, error: erroVerificacao } = await supabase
       .from('users')
       .select('id')
-      .eq('telefone', telefone)
+      .eq('telefone', telefonePadrao)
 
     if (erroVerificacao) {
       setErro('Erro ao verificar o telefone.')
@@ -47,11 +57,12 @@ export default function CadastroPage() {
       return
     }
 
-    // Cria conta no auth com e-mail fictício baseado no telefone
-    const emailFalso = `${telefone.replace(/\D/g, '')}@exemplo.com`
+    // Agora salva o email real digitado pelo usuário
+    const emailUsuario = email
 
+    // Cria conta no auth com o email informado pelo usuário
     const { data: authData, error: authError } = await supabase.auth.signUp({
-      email: emailFalso,
+      email: emailUsuario,
       password: senha,
     })
 
@@ -61,22 +72,15 @@ export default function CadastroPage() {
       return
     }
 
-    const { data: userData, error: userError } = await supabase.auth.getUser()
+    const user_id = authData.user.id
 
-    if (userError || !userData.user?.id) {
-      setErro('Confirme seu cadastro antes de continuar.')
-      setCarregando(false)
-      return
-    }
-
-    const user_id = userData.user.id
-
+    // Salva na tabela users com email real e telefone formatado
     const { error: erroInsert } = await supabase.from('users').insert([
       {
         id: user_id,
         nome,
-        telefone,
-        email: emailFalso,
+        telefone: telefonePadrao,
+        email: emailUsuario,  // email real do usuário
         role: 'cliente',
       }
     ])
@@ -106,7 +110,7 @@ export default function CadastroPage() {
 
         <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4">
           <input
-            {...register('nome')}
+            {...register('nome', { required: 'Nome obrigatório' })}
             placeholder="Seu nome"
             className="border border-pink-200 p-2 rounded text-zinc-800 placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-pink-400"
             required
@@ -144,16 +148,14 @@ export default function CadastroPage() {
             <p className="text-red-500 text-sm">{errors.email.message}</p>
           )}
 
-
           <input
-            {...register('senha')}
+            {...register('senha', { required: 'Senha obrigatória' })}
             type="password"
             placeholder="Senha"
             className="border border-pink-200 p-2 rounded text-zinc-800 placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-pink-400"
             required
           />
 
-          {/* Barra de carregamento */}
           {carregando && (
             <motion.div
               className="h-1 w-full rounded-full overflow-hidden bg-pink-200 mb-2"
@@ -170,7 +172,6 @@ export default function CadastroPage() {
             </motion.div>
           )}
 
-          {/* Botão de cadastrar */}
           <motion.button
             type="submit"
             disabled={carregando}
@@ -185,22 +186,17 @@ export default function CadastroPage() {
             </span>
           </motion.button>
 
-          {/* Mensagem de erro */}
           {erro && <p className="text-red-500 text-sm text-center">{erro}</p>}
 
-          {/* Botão para redefinir senha - só aparece se telefoneExiste */}
           {telefoneExiste && (
             <motion.button
               type="button"
               onClick={() => router.push('/redefinir-senha')}
               className="relative flex items-center justify-center font-semibold py-2 rounded-full transition-all duration-300 overflow-hidden bg-gradient-to-r from-pink-500 to-fuchsia-600 hover:from-pink-600 hover:to-fuchsia-700 text-white shadow-lg ring-2 ring-pink-400 hover:scale-105"
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.98 }}
             >
-              <span className="relative z-10 tracking-wide">🔐 Redefinir senha</span>
+              🔐 Redefinir senha
             </motion.button>
           )}
-
         </form>
       </div>
     </main>

@@ -1,15 +1,23 @@
 import { NextResponse } from 'next/server'
 import { supabase } from '../../lib/supabaseClient'
 
+function formatarTelefone(telefone) {
+  telefone = telefone.replace(/\D/g, '')
+  telefone = telefone.startsWith('55') ? telefone : `55${telefone}`
+  return `+${telefone}`
+}
+
 export async function POST(req) {
   const { telefone, codigo } = await req.json()
   if (!telefone || !codigo) return NextResponse.json({ ok: false, error: 'Dados obrigatórios' })
 
-  // Apenas busca, não altera!
+  // ✅ Padroniza o telefone
+  const telefoneFormatado = formatarTelefone(telefone)
+
   const { data, error } = await supabase
     .from('otp_codes')
     .select('*')
-    .eq('telefone', telefone)
+    .eq('telefone', telefoneFormatado)
     .eq('codigo', codigo)
     .eq('usado', false)
     .gte('expires_at', new Date().toISOString())
@@ -20,6 +28,5 @@ export async function POST(req) {
     return NextResponse.json({ ok: false, error: 'Código inválido ou expirado' })
   }
 
-  // Apenas retorna ok!
   return NextResponse.json({ ok: true })
 }

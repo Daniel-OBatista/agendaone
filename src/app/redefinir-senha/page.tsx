@@ -29,16 +29,21 @@ export default function NovaSenhaPage() {
     setCodigoEnviado(false)
     setEnviandoCodigo(true)
     const telefone = watch('telefone')
+  
     if (!telefone || telefone.length < 10) {
       setErro('Digite um telefone válido para receber o código.')
       setEnviandoCodigo(false)
       return
     }
-
+  
+    // ✅ Formatar telefone com +55
+    const telefonePadrao = telefone.replace(/\D/g, '')
+    const telefoneCompleto = telefonePadrao.startsWith('55') ? `+${telefonePadrao}` : `+55${telefonePadrao}`
+  
     const resp = await fetch('/api/enviar-code', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ telefone }),
+      body: JSON.stringify({ telefone: telefoneCompleto }), // ✅ Enviando padronizado
     })
     const data = await resp.json()
     if (data.ok) {
@@ -47,48 +52,51 @@ export default function NovaSenhaPage() {
       setErro(data.error || 'Erro ao enviar o código')
     }
     setEnviandoCodigo(false)
-  }
+  }  
 
   const onSubmit = async (data: FormularioSenha) => {
     setErro('')
     setCarregando(true)
-
-    // 1. Valide o código OTP no backend
+  
+    // Formatar telefone corretamente antes do envio
+    const telefonePadrao = data.telefone.replace(/\D/g, '')
+    const telefoneCompleto = telefonePadrao.startsWith('55') ? `+${telefonePadrao}` : `+55${telefonePadrao}`
+  
+    // 1. Valide o código OTP no backend com telefone formatado
     const respValidacao = await fetch('/api/verificar-code', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ telefone: data.telefone, codigo: data.codigo }),
+      body: JSON.stringify({ telefone: telefoneCompleto, codigo: data.codigo }),
     })
     const validacao = await respValidacao.json()
-
+  
     if (!validacao.ok) {
       setErro(validacao.error || 'Código inválido ou expirado')
       setCarregando(false)
       return
     }
-
-    // 2. Troque a senha no Supabase Auth pelo backend
+  
     // 2. Troque a senha no Supabase Auth pelo backend
     const respReset = await fetch('/api/redefinir-senha', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        telefone: data.telefone,
+        telefone: telefoneCompleto, // ✅ telefone formatado corretamente
         codigo: data.codigo,
         senha: data.senha,
       }),
     })
     const reset = await respReset.json()
-
+  
     if (!reset.ok) {
       setErro(reset.error || 'Erro ao redefinir a senha')
       setCarregando(false)
       return
     }
-
+  
     setCarregando(false)
     router.push('/login')
-  }
+  }  
 
   return (
     <main className="min-h-screen bg-pink-50 flex items-center justify-center px-4">

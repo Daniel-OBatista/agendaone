@@ -31,7 +31,7 @@ client.on('ready', () => {
 app.post('/enviar-codigo', async (req, res) => {
     const { telefone, codigo } = req.body;
     // Formate o telefone no padrão internacional, ex: 55DDXXXXXXXXX@c.us
-    const telefoneFormatado = `55${telefone.replace(/\D/g, '')}@c.us`;
+    const telefoneFormatado = `${telefone.replace(/\D/g, '')}@c.us`
 
     try {
         await client.sendMessage(telefoneFormatado, `Seu código de verificação é: ${codigo}`);

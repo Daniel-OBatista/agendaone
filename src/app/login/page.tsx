@@ -24,42 +24,46 @@ export default function LoginPage() {
     setErro('')
     setMostrarReset(false)
     setCarregando(true)
-
+  
     const { telefone, senha } = data
-
+  
+    // Padroniza o telefone antes da consulta
+    const telefonePadrao = telefone.replace(/\D/g, '')
+    const telefoneCompleto = telefonePadrao.startsWith('55') ? `+${telefonePadrao}` : `+55${telefonePadrao}`
+  
     const { data: usuarios, error: erroBusca } = await supabase
       .from('users')
       .select('email')
-      .eq('telefone', telefone)
+      .eq('telefone', telefoneCompleto) // ✅ telefone padronizado corretamente
       .single()
-
+  
     if (erroBusca || !usuarios?.email) {
       setErro('Telefone ou senha digitados inválidos.')
       setCarregando(false)
       setMostrarReset(true)
       return
     }
-
+  
     const { data: loginData, error } = await supabase.auth.signInWithPassword({
       email: usuarios.email,
       password: senha,
     })
-
+  
     if (error || !loginData.session) {
       setErro('Senha incorreta.')
       setCarregando(false)
       setMostrarReset(true)
       return
     }
-
+  
     const { data: userData } = await supabase.auth.getUser()
-
+  
     const { data: perfil } = await supabase
       .from('users')
       .select('role')
       .eq('id', userData.user?.id)
       .single()
-
+  
     if (perfil?.role === 'admin') {
       router.push('/admin')
     } else {
