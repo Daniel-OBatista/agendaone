@@ -42,3 +42,12 @@ next-env.d.ts
 
 .wwebjs_auth/
 .wwebjs_auth
+
+node_modules/
+.wwebjs_cache/
+.wwebjs_auth/
+
+node_modules/
+.wwebjs_cache/
+.wwebjs_auth/
+
