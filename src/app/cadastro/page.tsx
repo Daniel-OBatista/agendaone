@@ -188,16 +188,19 @@ export default function CadastroPage() {
           {/* Mensagem de erro */}
           {erro && <p className="text-red-500 text-sm text-center">{erro}</p>}
 
-          {/* Botão para redefinir senha */}
-          <motion.button
-            type="button"
-            onClick={() => router.push('/redefinir-senha')}
-            className="relative flex items-center justify-center font-semibold py-2 rounded-full transition-all duration-300 overflow-hidden bg-gradient-to-r from-pink-500 to-fuchsia-600 hover:from-pink-600 hover:to-fuchsia-700 text-white shadow-lg ring-2 ring-pink-400 hover:scale-105"
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.98 }}
-          >
-            <span className="relative z-10 tracking-wide">🔐 Redefinir senha</span>
-          </motion.button>
+          {/* Botão para redefinir senha - só aparece se telefoneExiste */}
+          {telefoneExiste && (
+            <motion.button
+              type="button"
+              onClick={() => router.push('/redefinir-senha')}
+              className="relative flex items-center justify-center font-semibold py-2 rounded-full transition-all duration-300 overflow-hidden bg-gradient-to-r from-pink-500 to-fuchsia-600 hover:from-pink-600 hover:to-fuchsia-700 text-white shadow-lg ring-2 ring-pink-400 hover:scale-105"
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.98 }}
+            >
+              <span className="relative z-10 tracking-wide">🔐 Redefinir senha</span>
+            </motion.button>
+          )}
+
         </form>
       </div>
     </main>
