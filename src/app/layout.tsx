@@ -16,9 +16,9 @@ export const metadata: Metadata = {
   title: "AgendaOne", // NOME QUE APARECE NA ABA
   description: "Agende seu horário online no AgendaOne!",
   icons: {
-    icon: "/salao.png",     // esse arquivo PRECISA estar em /public/salao.png
-    apple: "/salao.png",
-  },
+    icon: "/favicon.png",
+    apple: "/favicon.png",
+  },  
   manifest: "/manifest.json",
   openGraph: {
     title: "AgendaOne",
