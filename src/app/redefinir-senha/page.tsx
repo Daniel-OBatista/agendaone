@@ -122,37 +122,40 @@ export default function NovaSenhaPage() {
           )}
 
           {/* Código de verificação + botão de envio */}
-          <div className="relative flex items-center">
-            <input
-              {...register('codigo', {
-                required: 'Digite o código recebido no e-mail.',
-                pattern: {
-                  value: /^\d{6}$/,
-                  message: 'O código deve ter 6 dígitos.',
-                },
-              })}
-              placeholder="Código de verificação enviado por e-mail"
-              className="flex-1 border border-pink-200 p-2 rounded text-zinc-800 placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-pink-400"
-              maxLength={6}
+          <div className="relative flex items-center gap-2">
+          <input
+            {...register('codigo', {
+              required: 'Digite o código recebido no e-mail.',
+              pattern: {
+                value: /^\d{6}$/,
+                message: 'O código deve ter 6 dígitos.',
+              },
+            })}
+              placeholder="Digite o código de verificação"
+              // ou:
+              // placeholder="Código de verificação 👉"
+              className="w-full border border-pink-200 p-2 rounded text-zinc-800 placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-pink-400"
             />
-            <button
-              type="button"
-              disabled={enviandoCodigo}
-              onClick={handleEnviarCodigo}
-              className="ml-2 px-3 py-2 rounded-full bg-gradient-to-r from-pink-500 to-fuchsia-600 text-white font-semibold flex items-center gap-1 hover:from-pink-600 hover:to-fuchsia-700 transition-all duration-300 ring-2 ring-pink-300 shadow"
-            >
-              {enviandoCodigo ? (
-                <svg className="animate-spin h-5 w-5" fill="none" viewBox="0 0 24 24">
-                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="white" strokeWidth="4" />
-                  <path className="opacity-75" fill="white" d="M4 12a8 8 0 018-8v8z" />
-                </svg>
-              ) : (
-                <>
-                  <Send size={16} /> Enviar código
-                </>
-              )}
-            </button>
-          </div>
+          <button
+            type="button"
+            disabled={enviandoCodigo}
+            onClick={handleEnviarCodigo}
+            className="px-2.5 py-1.5 rounded-full bg-gradient-to-r from-pink-500 to-fuchsia-600 text-white font-semibold flex items-center gap-1 text-sm hover:from-pink-600 hover:to-fuchsia-700 transition-all duration-300 ring-2 ring-pink-300 shadow"
+            style={{ whiteSpace: 'nowrap' }}
+          >
+            {enviandoCodigo ? (
+              <svg className="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="white" strokeWidth="4" />
+                <path className="opacity-75" fill="white" d="M4 12a8 8 0 018-8v8z" />
+              </svg>
+            ) : (
+              <>
+                <Send size={14} /> Enviar código
+              </>
+            )}
+          </button>
+        </div>
+
           {errors.codigo && (
             <p className="text-red-500 text-sm">{errors.codigo.message}</p>
           )}

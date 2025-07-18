@@ -25,12 +25,12 @@ export default function CadastroPage() {
   const { register, handleSubmit, formState: { errors } } = useForm<FormularioCadastro>()
   const [erro, setErro] = useState('')
   const [carregando, setCarregando] = useState(false)
-  const [telefoneExiste, setTelefoneExiste] = useState(false)
+  const [emailExiste, setEmailExiste] = useState(false)
   const router = useRouter()
 
   const onSubmit = async (data: FormularioCadastro) => {
     setErro('')
-    setTelefoneExiste(false)
+    setEmailExiste(false)
     setCarregando(true)
 
     const { nome, email, senha, telefone } = data
@@ -38,31 +38,28 @@ export default function CadastroPage() {
     // Padroniza telefone
     const telefonePadrao = formatarTelefone(telefone)
 
-    // Verifica se o telefone já está cadastrado com telefone formatado
+    // Verifica se o e-mail já está cadastrado
     const { data: usuarioExiste, error: erroVerificacao } = await supabase
       .from('users')
       .select('id')
-      .eq('telefone', telefonePadrao)
+      .eq('email', email)
 
     if (erroVerificacao) {
-      setErro('Erro ao verificar o telefone.')
+      setErro('Erro ao verificar o e-mail.')
       setCarregando(false)
       return
     }
 
     if (usuarioExiste && usuarioExiste.length > 0) {
-      setErro('Este telefone já está cadastrado.')
-      setTelefoneExiste(true)
+      setErro('Este e-mail já está cadastrado.')
+      setEmailExiste(true)
       setCarregando(false)
       return
     }
 
-    // Agora salva o email real digitado pelo usuário
-    const emailUsuario = email
-
     // Cria conta no auth com o email informado pelo usuário
     const { data: authData, error: authError } = await supabase.auth.signUp({
-      email: emailUsuario,
+      email: email,
       password: senha,
     })
 
@@ -80,7 +77,7 @@ export default function CadastroPage() {
         id: user_id,
         nome,
         telefone: telefonePadrao,
-        email: emailUsuario,  // email real do usuário
+        email: email,  // email real do usuário
         role: 'cliente',
       }
     ])
@@ -188,7 +185,7 @@ export default function CadastroPage() {
 
           {erro && <p className="text-red-500 text-sm text-center">{erro}</p>}
 
-          {telefoneExiste && (
+          {emailExiste && (
             <motion.button
               type="button"
               onClick={() => router.push('/redefinir-senha')}
