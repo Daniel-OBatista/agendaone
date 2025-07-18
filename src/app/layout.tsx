@@ -64,8 +64,10 @@ export default function RootLayout({
   return (
     <html lang="pt">
       <head>
-        <link rel="icon" href="//salao.png" />
-        <link rel="apple-touch-icon" href="//salao.png" />
+        <link rel="icon" href="/salao.png" />
+        <link rel="icon" type="image/png" sizes="32x32" href="/salao.png" />
+        <link rel="icon" type="image/png" sizes="16x16" href="/salao.png" />
+        <link rel="apple-touch-icon" href="/salao.png" />
         <link rel="manifest" href="/manifest.json" />
         <meta name="theme-color" content="#f472b6" />
       </head>
