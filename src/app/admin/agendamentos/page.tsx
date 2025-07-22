@@ -157,8 +157,10 @@ export default function AgendamentosAdminPage() {
     )
   }
 
-  const agendamentosDoDia = agendamentos.filter((a) =>
-    isSameDay(parseISO(a.data_hora), dataSelecionada)
+    // --- NOVO FILTRO DE AGENDAMENTOS DO DIA ---
+    const agendamentosDoDia = agendamentos.filter((a) =>
+    isSameDay(parseISO(a.data_hora), dataSelecionada) &&
+    (operadorSelecionado === 'todos' || a.operador_id === operadorSelecionado)
   )
 
   const horariosAgendados = agendamentosDoDia.map((a) =>

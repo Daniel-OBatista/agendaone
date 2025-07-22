@@ -100,14 +100,14 @@ body {
 
 .react-calendar__tile:enabled:hover {
   background: #f9a8d4;
-  color: white;
+  color: #be185d;
   transform: scale(1.1);
 }
 
 /* Hoje */
 .react-calendar__tile--now {
   background: #f472b6 !important;
-  color: white !important;
+  color: #be185d !important;
   font-weight: bold;
   border-radius: 50%;
 }
@@ -133,7 +133,7 @@ body {
   color: #b91c1c;
   font-size: 1.2rem;
   position: absolute;
-  bottom: 4px;
+  bottom: 0;
   left: 0;
   right: 0;
   text-align: center;
