@@ -69,21 +69,36 @@ export default function AgendarClientePage() {
       horarios.push(`${String(h).padStart(2, '0')}:00`)
     }
 
-    // Busca agendamentos já ocupados
+    // Busca agendamentos já ocupados (CONSIDERANDO STATUS!)
     const inicio = new Date(format(dataSelecionada!, 'yyyy-MM-dd') + 'T00:00:00').toISOString()
     const fim = new Date(format(dataSelecionada!, 'yyyy-MM-dd') + 'T23:59:59').toISOString()
     const { data: ags } = await supabase
       .from('appointments')
-      .select('data_hora')
+      .select('data_hora, status')
       .eq('operador_id', operadorId)
       .gte('data_hora', inicio)
       .lte('data_hora', fim)
 
-    const ocupados = (ags || []).map(a =>
-      format(parseISO(a.data_hora), 'HH:mm')
-    )
+    // Só bloqueia horários de agendamentos AGENDADOS ou CONCLUÍDOS
+    const ocupados = (ags || [])
+      .filter(a => a.status === 'agendado' || a.status === 'concluído')
+      .map(a => format(parseISO(a.data_hora), 'HH:mm'))
 
-    setHorariosDisponiveis(horarios.filter(h => !ocupados.includes(h)))
+    let horariosFiltrados = horarios.filter(h => !ocupados.includes(h))
+
+    // AJUSTE: no dia atual, só mostra horários futuros
+    if (
+      dataSelecionada &&
+      format(dataSelecionada, 'yyyy-MM-dd') === format(new Date(), 'yyyy-MM-dd')
+    ) {
+      const horaAtual = new Date().getHours()
+      horariosFiltrados = horariosFiltrados.filter(horaStr => {
+        const [h] = horaStr.split(':').map(Number)
+        return h > horaAtual
+      })
+    }
+
+    setHorariosDisponiveis(horariosFiltrados)
   }
 
   async function agendar() {
@@ -119,26 +134,26 @@ export default function AgendarClientePage() {
     // Verifica conflito
     const { data: conflitos } = await supabase
       .from('appointments')
-      .select('id')
+      .select('id, status')
       .eq('operador_id', operadorId)
       .eq('data_hora', dataHoraISO)
 
-    if ((conflitos || []).length > 0) {
+    // Só bloqueia se status for agendado/concluído
+    const conflitoValido = (conflitos || []).find(c => c.status === 'agendado' || c.status === 'concluído')
+    if (conflitoValido) {
       setErro('Horário já ocupado. Escolha outro.')
       setCarregando(false)
       return
     }
 
     // Salva no banco
-    const { error: insertError } = await supabase.from('appointments').insert([
-      {
-        user_id: userData.user.id,
-        operador_id: operadorId,
-        service_id: servicoId,
-        data_hora: dataHoraISO,
-        status: 'agendado'
-      }
-    ])
+    const { error: insertError } = await supabase.from('appointments').insert([{
+      user_id: userData.user.id,
+      operador_id: operadorId,
+      service_id: servicoId,
+      data_hora: dataHoraISO,
+      status: 'agendado'
+    }])
 
     if (insertError) {
       setErro(insertError.message)
@@ -178,7 +193,6 @@ export default function AgendarClientePage() {
 
   // Marca dias disponíveis (pode customizar para só marcar dias realmente disponíveis, se quiser)
   const marcarDias = ({ date }: { date: Date }) => {
-    // Exemplo: destaca somente se dia >= hoje
     const hoje = new Date()
     if (date >= new Date(hoje.getFullYear(), hoje.getMonth(), hoje.getDate())) {
       return 'highlight'

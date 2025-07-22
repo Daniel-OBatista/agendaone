@@ -25,43 +25,44 @@ export default function AgendamentosPage() {
   const [carregando, setCarregando] = useState(true)
   const router = useRouter()
 
-  useEffect(() => {
-    async function fetchTudo() {
-      const { data: userData, error: userError } = await supabase.auth.getUser()
-      if (userError || !userData.user?.id) {
-        setErro('Você precisa estar logado.')
-        setCarregando(false)
-        return
-      }
-
-      // Agendamentos
-      const { data: ags, error: errA } = await supabase
-        .from('appointments')
-        .select('id, data_hora, status, service_id, operador_id')
-        .eq('user_id', userData.user.id)
-        .order('data_hora', { ascending: true })
-
-      // Serviços
-      const { data: svcs, error: errS } = await supabase
-        .from('services')
-        .select('id, nome')
-
-      // Colaboradores
-      const { data: cols, error: errC } = await supabase
-        .from('operadores')
-        .select('id, nome')
-
-      if (errA || errS || errC) {
-        setErro('Erro ao carregar dados.')
-      } else {
-        setAgendamentos(ags || [])
-        setServicos(svcs || [])
-        setColaboradores(cols || [])
-      }
+  async function fetchTudo() {
+    const { data: userData, error: userError } = await supabase.auth.getUser()
+    if (userError || !userData.user?.id) {
+      setErro('Você precisa estar logado.')
       setCarregando(false)
+      return
     }
 
+    // Agendamentos
+    const { data: ags, error: errA } = await supabase
+      .from('appointments')
+      .select('id, data_hora, status, service_id, operador_id')
+      .eq('user_id', userData.user.id)
+      .order('data_hora', { ascending: true })
+
+    // Serviços
+    const { data: svcs, error: errS } = await supabase
+      .from('services')
+      .select('id, nome')
+
+    // Colaboradores
+    const { data: cols, error: errC } = await supabase
+      .from('operadores')
+      .select('id, nome')
+
+    if (errA || errS || errC) {
+      setErro('Erro ao carregar dados.')
+    } else {
+      setAgendamentos(ags || [])
+      setServicos(svcs || [])
+      setColaboradores(cols || [])
+    }
+    setCarregando(false)
+  }
+
+  useEffect(() => {
     fetchTudo()
+    // eslint-disable-next-line
   }, [])
 
   async function cancelarAgendamento(id: string) {
@@ -76,11 +77,8 @@ export default function AgendamentosPage() {
     if (error) {
       setErro('Erro ao cancelar: ' + error.message)
     } else {
-      setAgendamentos((prev) =>
-        prev.map((a) =>
-          a.id === id ? { ...a, status: 'cancelado' } : a
-        )
-      )
+      // Atualiza do banco imediatamente para liberar o horário
+      await fetchTudo()
       setSucesso('Agendamento cancelado com sucesso!')
       setTimeout(() => setSucesso(''), 4000)
     }
@@ -92,16 +90,16 @@ export default function AgendamentosPage() {
       .from('appointments')
       .update({ status: 'cancelado' })
       .eq('id', agendamentoId)
-  
+
     if (error) {
       setErro('Erro ao cancelar agendamento antes de reagendar: ' + error.message)
       setTimeout(() => setErro(''), 4000)
       return
     }
-  
+
+    await fetchTudo()
     router.push(`/cliente/agendar?service=${serviceId}&reagendar=${agendamentoId}`)
   }
-  
 
   const formatarData = (iso: string) =>
     new Date(iso).toLocaleString('pt-BR', {
@@ -185,7 +183,6 @@ export default function AgendamentosPage() {
                         Colaborador: <span className="ml-1">{colaborador?.nome || '---'}</span>
                       </span>
                     </div>
-                    {/* Troque aqui */}
                     {statusBadge(a.status)}
                   </div>
                   <span className="text-zinc-700 font-bold text-md">
@@ -208,8 +205,6 @@ export default function AgendamentosPage() {
                     </div>
                   )}
                 </li>
-
-
               )
             })}
           </ul>

@@ -73,6 +73,7 @@ export default function AgendamentosAdminPage() {
 
   useEffect(() => {
     fetchAgendamentos()
+    // eslint-disable-next-line
   }, [operadorSelecionado, dataSelecionada])
 
   async function carregarOperadores() {
@@ -114,6 +115,7 @@ export default function AgendamentosAdminPage() {
 
     setCarregando(false)
   }
+
   async function atualizarStatus(id: string, novoStatus: string) {
     const confirmar = confirm(`Deseja realmente atualizar o status para "${novoStatus}"?`)
     if (!confirmar) return
@@ -124,9 +126,7 @@ export default function AgendamentosAdminPage() {
       .eq('id', id)
 
     if (!error) {
-      setAgendamentos((prev) =>
-        prev.map((a) => (a.id === id ? { ...a, status: novoStatus } : a))
-      )
+      await fetchAgendamentos()
     } else {
       alert('Erro ao atualizar status: ' + error.message)
     }
@@ -138,7 +138,7 @@ export default function AgendamentosAdminPage() {
 
     const { error } = await supabase.from('appointments').delete().eq('id', id)
     if (!error) {
-      setAgendamentos((prev) => prev.filter((a) => a.id !== id))
+      await fetchAgendamentos()
     } else {
       alert('Erro ao excluir: ' + error.message)
     }
@@ -163,10 +163,23 @@ export default function AgendamentosAdminPage() {
     (operadorSelecionado === 'todos' || a.operador_id === operadorSelecionado)
   )
 
+  // Debug: Veja no console os status de todos os agendamentos do dia!
+  console.log(
+    'agendamentosDoDia:', 
+    agendamentosDoDia.map(a => ({
+      id: a.id,
+      status: a.status,
+      hora: format(new Date(a.data_hora), 'HH:mm')
+    }))
+  )
+
   // Só horários realmente ocupados (NÃO inclui cancelado)
   const horariosAgendados = agendamentosDoDia
     .filter((a) => a.status === 'agendado' || a.status === 'concluído')
     .map((a) => format(new Date(a.data_hora), 'HH:mm'))
+
+  // Debug: Veja quais horários estão bloqueados
+  console.log('horariosAgendados:', horariosAgendados)
 
   const horariosDisponiveis = gerarHorariosDisponiveis(60, horariosAgendados)
 
@@ -247,7 +260,7 @@ export default function AgendamentosAdminPage() {
             <img
               src={
                 operadorSelecionado === 'todos'
-                  ? '/logo.png' // substitua pelo caminho da sua imagem padrão
+                  ? '/logo.png'
                   : operadores.find((o) => o.id === operadorSelecionado)?.foto_url || '/logo.png'
               }
               alt="Foto do operador"
