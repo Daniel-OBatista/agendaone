@@ -11,19 +11,22 @@ type AgendamentoUsuario = {
   status: string
   service_id: string
   operador_id: string
-  services: { nome: string }[]
-  operadores: { nome: string }[]
 }
+
+type Servico = { id: string; nome: string }
+type Colaborador = { id: string; nome: string }
 
 export default function AgendamentosPage() {
   const [agendamentos, setAgendamentos] = useState<AgendamentoUsuario[]>([])
+  const [servicos, setServicos] = useState<Servico[]>([])
+  const [colaboradores, setColaboradores] = useState<Colaborador[]>([])
   const [erro, setErro] = useState('')
   const [sucesso, setSucesso] = useState('')
   const [carregando, setCarregando] = useState(true)
   const router = useRouter()
 
   useEffect(() => {
-    async function fetchAgendamentos() {
+    async function fetchTudo() {
       const { data: userData, error: userError } = await supabase.auth.getUser()
       if (userError || !userData.user?.id) {
         setErro('Você precisa estar logado.')
@@ -31,30 +34,34 @@ export default function AgendamentosPage() {
         return
       }
 
-      const { data, error } = await supabase
+      // Agendamentos
+      const { data: ags, error: errA } = await supabase
         .from('appointments')
-        .select(`
-          id,
-          data_hora,
-          status,
-          service_id,
-          operador_id,
-          services(nome),
-          operadores(nome)
-        `)
+        .select('id, data_hora, status, service_id, operador_id')
         .eq('user_id', userData.user.id)
         .order('data_hora', { ascending: true })
 
-      if (error) {
-        setErro(error.message)
-      } else {
-        setAgendamentos(data as AgendamentoUsuario[])
-      }
+      // Serviços
+      const { data: svcs, error: errS } = await supabase
+        .from('services')
+        .select('id, nome')
 
+      // Colaboradores
+      const { data: cols, error: errC } = await supabase
+        .from('operadores')
+        .select('id, nome')
+
+      if (errA || errS || errC) {
+        setErro('Erro ao carregar dados.')
+      } else {
+        setAgendamentos(ags || [])
+        setServicos(svcs || [])
+        setColaboradores(cols || [])
+      }
       setCarregando(false)
     }
 
-    fetchAgendamentos()
+    fetchTudo()
   }, [])
 
   async function cancelarAgendamento(id: string) {
@@ -79,9 +86,22 @@ export default function AgendamentosPage() {
     }
   }
 
-  function reagendar(serviceId: string, agendamentoId: string) {
+  async function reagendar(serviceId: string, agendamentoId: string) {
+    // Cancela o agendamento atual antes de redirecionar
+    const { error } = await supabase
+      .from('appointments')
+      .update({ status: 'cancelado' })
+      .eq('id', agendamentoId)
+  
+    if (error) {
+      setErro('Erro ao cancelar agendamento antes de reagendar: ' + error.message)
+      setTimeout(() => setErro(''), 4000)
+      return
+    }
+  
     router.push(`/cliente/agendar?service=${serviceId}&reagendar=${agendamentoId}`)
   }
+  
 
   const formatarData = (iso: string) =>
     new Date(iso).toLocaleString('pt-BR', {
@@ -149,41 +169,47 @@ export default function AgendamentosPage() {
         ) : (
           <ul className="flex flex-col gap-6">
             {agendamentos.map((a) => {
+              const servico = servicos.find(s => s.id === a.service_id)
+              const colaborador = colaboradores.find(c => c.id === a.operador_id)
               const ehFuturo = new Date(a.data_hora) > new Date()
               const podeAlterar = a.status === 'agendado' && ehFuturo
 
               return (
-                <li key={a.id} className="border border-pink-200 rounded-2xl shadow-md bg-white/90 p-5 transition-all flex flex-col gap-2 hover:shadow-pink-200/70">
-                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
-                    <span className="text-pink-700 font-semibold text-lg">
-                      {a.services?.[0]?.nome || '---'}
-                    </span>
-                    <span>{statusBadge(a.status)}</span>
+                <li key={a.id} className="bg-white rounded-2xl border border-pink-100 shadow-xl p-6 flex flex-col gap-3 transition-all hover:shadow-pink-300/30 relative">
+                  <div className="flex flex-wrap items-center gap-2 justify-between">
+                    <div className="flex flex-wrap items-center gap-3">
+                      <span className="inline-flex items-center bg-pink-600/90 text-white font-extrabold text-base px-3 py-1 rounded-lg shadow border-2 border-pink-200">
+                        Serviço: <span className="ml-1">{servico?.nome || '---'}</span>
+                      </span>
+                      <span className="inline-flex items-center bg-blue-600/80 text-white font-bold text-base px-3 py-1 rounded-lg shadow border-2 border-blue-200">
+                        Colaborador: <span className="ml-1">{colaborador?.nome || '---'}</span>
+                      </span>
+                    </div>
+                    {/* Troque aqui */}
+                    {statusBadge(a.status)}
                   </div>
-                  <span className="text-zinc-500 text-sm">
-                    <b>Colaborador:</b> {a.operadores?.[0]?.nome || '---'}
+                  <span className="text-zinc-700 font-bold text-md">
+                    Data: <span className="font-normal">{formatarData(a.data_hora)}</span>
                   </span>
-                  <span className="text-zinc-700 text-sm">
-                    <b>Data:</b> {formatarData(a.data_hora)}
-                  </span>
-
                   {podeAlterar && (
-                    <div className="flex gap-2 mt-2 flex-wrap">
+                    <div className="flex gap-3 mt-3">
                       <button
                         onClick={() => cancelarAgendamento(a.id)}
-                        className="flex items-center gap-1 bg-red-500 text-white px-4 py-1.5 rounded-full font-semibold shadow hover:bg-red-600 transition-all"
+                        className="flex items-center gap-2 bg-red-500 hover:bg-red-600 text-white px-5 py-2 rounded-full font-bold text-lg shadow transition"
                       >
-                        <XCircle size={18} /> Cancelar
+                        <XCircle size={20} /> Cancelar
                       </button>
                       <button
                         onClick={() => reagendar(a.service_id, a.id)}
-                        className="flex items-center gap-1 bg-blue-500 text-white px-4 py-1.5 rounded-full font-semibold shadow hover:bg-blue-600 transition-all"
+                        className="flex items-center gap-2 bg-blue-500 hover:bg-blue-600 text-white px-5 py-2 rounded-full font-bold text-lg shadow transition"
                       >
-                        <RotateCcw size={18} /> Reagendar
+                        <RotateCcw size={20} /> Reagendar
                       </button>
                     </div>
                   )}
                 </li>
+
+
               )
             })}
           </ul>

@@ -157,15 +157,16 @@ export default function AgendamentosAdminPage() {
     )
   }
 
-    // --- NOVO FILTRO DE AGENDAMENTOS DO DIA ---
-    const agendamentosDoDia = agendamentos.filter((a) =>
+  // --- NOVO FILTRO DE AGENDAMENTOS DO DIA ---
+  const agendamentosDoDia = agendamentos.filter((a) =>
     isSameDay(parseISO(a.data_hora), dataSelecionada) &&
     (operadorSelecionado === 'todos' || a.operador_id === operadorSelecionado)
   )
 
-  const horariosAgendados = agendamentosDoDia.map((a) =>
-    format(new Date(a.data_hora), 'HH:mm')
-  )
+  // Só horários realmente ocupados (NÃO inclui cancelado)
+  const horariosAgendados = agendamentosDoDia
+    .filter((a) => a.status === 'agendado' || a.status === 'concluído')
+    .map((a) => format(new Date(a.data_hora), 'HH:mm'))
 
   const horariosDisponiveis = gerarHorariosDisponiveis(60, horariosAgendados)
 
@@ -231,30 +232,28 @@ export default function AgendamentosAdminPage() {
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 animate-fade-in">
               {horariosDisponiveis.map((hora) => (
                 <span
-                key={hora}
-                className="bg-white border border-pink-300 text-pink-700 px-4 py-[6px] rounded-full text-sm font-medium shadow hover:shadow-pink-300/50 hover:scale-105 transition-all duration-300 text-center leading-tight flex items-center justify-center"
-              >
-                {hora}
-              </span>
-              
+                  key={hora}
+                  className="bg-white border border-pink-300 text-pink-700 px-4 py-[6px] rounded-full text-sm font-medium shadow hover:shadow-pink-300/50 hover:scale-105 transition-all duration-300 text-center leading-tight flex items-center justify-center"
+                >
+                  {hora}
+                </span>
               ))}
             </div>
           )}
         </div>
-          {/* Foto do operador */}
+        {/* Foto do operador */}
         <div className="flex justify-center items-start">
-        <div className="flex justify-center items-start">
-          <img
-            src={
-              operadorSelecionado === 'todos'
-                ? '/logo.png' // substitua pelo caminho da sua imagem padrão
-                : operadores.find((o) => o.id === operadorSelecionado)?.foto_url || '/logo.png'
-            }
-            alt="Foto do operador"
-            className="w-full max-w-md h-[280px] object-cover rounded-lg shadow-xl bg-zinc-100 mx-auto mt-4"
-          />
-        </div>
-
+          <div className="flex justify-center items-start">
+            <img
+              src={
+                operadorSelecionado === 'todos'
+                  ? '/logo.png' // substitua pelo caminho da sua imagem padrão
+                  : operadores.find((o) => o.id === operadorSelecionado)?.foto_url || '/logo.png'
+              }
+              alt="Foto do operador"
+              className="w-full max-w-md h-[280px] object-cover rounded-lg shadow-xl bg-zinc-100 mx-auto mt-4"
+            />
+          </div>
         </div>
       </div>
 
