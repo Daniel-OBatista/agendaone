@@ -149,7 +149,34 @@ export default function ClientesAdminPage() {
               >
                 {user.nome}
               </td>
-              <td className="p-3">{user.telefone || '—'}</td>
+
+              <td className="p-3">
+                {user.telefone ? (
+                  <a
+                    href={`https://wa.me/${user.telefone.replace(/^\+/, '')}?text=${encodeURIComponent(`Olá ${user.nome}, tudo bem?`)}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-pink-600 hover:underline flex items-center gap-1"
+                    title="Enviar mensagem no WhatsApp"
+                  >
+                    {user.telefone}
+                    {/* Ícone WhatsApp SVG */}
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      width={18}
+                      height={18}
+                      fill="currentColor"
+                      viewBox="0 0 24 24"
+                      className="ml-1"
+                    >
+                      <path d="M20.52 3.48A11.77 11.77 0 0 0 12 0 12 12 0 0 0 2.05 17.56L0 24l6.63-2A12 12 0 0 0 12 24h.01A12 12 0 0 0 24 12a11.94 11.94 0 0 0-3.48-8.52zm-8.51 19.5a10.1 10.1 0 0 1-5.16-1.42l-.37-.22-3.94 1.18 1.21-3.83-.24-.39A10.08 10.08 0 1 1 21.94 12a9.98 9.98 0 0 1-9.93 10.98zm5.46-7.19c-.3-.15-1.79-.89-2.07-.99-.28-.1-.48-.15-.68.15-.19.29-.77.99-.94 1.19-.17.2-.35.22-.65.07a8.15 8.15 0 0 1-2.39-1.48 8.92 8.92 0 0 1-1.65-2.05c-.17-.3 0-.46.13-.6.13-.13.29-.34.43-.51.14-.18.19-.3.29-.5.1-.2.05-.37-.03-.52-.08-.15-.68-1.63-.93-2.23-.25-.6-.5-.51-.68-.52-.18-.01-.38-.01-.58-.01-.2 0-.52.07-.79.37s-1.04 1.01-1.04 2.47.81 2.86 1.57 3.77c.76.91 2.26 2.39 4.49 3.01.63.18 1.12.29 1.5.38.63.16 1.2.13 1.65.08.5-.05 1.52-.62 1.74-1.21.21-.59.21-1.09.15-1.21-.07-.12-.28-.19-.58-.33z" />
+                    </svg>
+                  </a>
+                ) : (
+                  '—'
+                )}
+              </td>
+
               <td className="p-3">
                 {user.ultimo_agendamento
                   ? new Date(user.ultimo_agendamento).toLocaleString('pt-BR', {
