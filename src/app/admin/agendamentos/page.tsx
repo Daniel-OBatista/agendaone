@@ -94,18 +94,24 @@ export default function AgendamentosAdminPage() {
   async function fetchAgendamentos() {
     setCarregando(true)
     let query = supabase
-  .from('appointments')
-  .select(`
-    id,
-    data_hora,
-    status,
-    operador_id,
-    user_id,
-    user:fk_usuario(nome),
-    service:appointments_service_id_fkey(nome),
-    operador:fk_operador(nome)
-  `)
-  .order('data_hora', { ascending: true })
+      .from('appointments')
+      .select(`
+  id,
+  data_hora,
+  status,
+  operador_id,
+  user_id,
+  user:fk_appointments_user(nome),
+  service:appointments_service_id_fkey(nome),
+  operador:fk_operador(nome)
+`)
+
+
+
+
+
+
+      .order('data_hora', { ascending: true })
 
     if (operadorSelecionado !== 'todos') {
       query = query.eq('operador_id', operadorSelecionado)
@@ -270,50 +276,58 @@ export default function AgendamentosAdminPage() {
         ) : agendamentosDoDia.length === 0 ? (
           <p className="text-center text-gray-500">Nenhum agendamento neste dia.</p>
         ) : (
-          <ul className="flex flex-col gap-4 max-w-xl mx-auto">
-            {agendamentosDoDia.map((a) => (
-              <li
-                key={a.id}
-                className="border p-4 rounded bg-white/60 backdrop-blur-md shadow-md hover:shadow-lg transition-all"
-              >
-                <p><strong>👤 Cliente:</strong> {a.user?.[0]?.nome || '---'}</p>
-                <p><strong>💅 Serviço:</strong> {a.service?.[0]?.nome || '---'}</p>
-                <p><strong>👨‍🔧 Colaborador:</strong> {a.operador?.[0]?.nome || '---'}</p>
-                <p><strong>🕒 Horário:</strong> {format(new Date(a.data_hora), 'HH:mm')}</p>
-                <p><strong>Status:</strong> {badge(a.status)}</p>
-                <div className="flex gap-2 mt-3 flex-wrap">
-                  {a.status !== 'concluído' && (
-                    <>
-                      <button
-                        onClick={() => atualizarStatus(a.id, 'concluído')}
-                        className="bg-green-500 text-white px-3 py-1 rounded hover:bg-green-600 transition shadow hover:shadow-green-400/40"
-                      >
-                        ✅ Concluído
-                      </button>
-                      <button
-                        onClick={() => atualizarStatus(a.id, 'cancelado')}
-                        className="bg-yellow-500 text-white px-3 py-1 rounded hover:bg-yellow-600 transition shadow hover:shadow-yellow-400/40"
-                      >
-                        🚫 Cancelar
-                      </button>
-                      <button
-                        onClick={() => reagendarAgendamento(a)}
-                        className="bg-blue-500 text-white px-3 py-1 rounded hover:bg-blue-600 transition shadow hover:shadow-blue-400/40 flex items-center gap-1"
-                      >
-                        <RotateCcw size={16} /> Reagendar
-                      </button>
-                    </>
-                  )}
-                  <button
-                    onClick={() => excluirAgendamento(a.id)}
-                    className="bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600 transition shadow hover:shadow-red-400/40"
-                  >
-                    🗑️ Excluir
-                  </button>
-                </div>
-              </li>
-            ))}
-          </ul>
+
+
+<ul className="flex flex-col gap-4 max-w-xl mx-auto">
+  {agendamentosDoDia.map((a) => (
+    <li
+      key={a.id}
+      className="border p-4 rounded bg-white/60 backdrop-blur-md shadow-md hover:shadow-lg transition-all"
+    >
+      <p><strong>👤 Cliente:</strong> {a.user?.[0]?.nome || '---'}</p>
+
+      <p><strong>💅 Serviço:</strong> {a.service?.[0]?.nome || '---'}</p>
+      <p><strong>🕒 Horário:</strong> {format(new Date(a.data_hora), 'HH:mm')}</p>
+      <p><strong>Status:</strong> {badge(a.status)}</p>
+      <div className="flex gap-2 mt-3 flex-wrap">
+        {a.status !== 'concluído' && (
+          <>
+            <button
+              onClick={() => atualizarStatus(a.id, 'concluído')}
+              className="bg-green-500 text-white px-3 py-1 rounded hover:bg-green-600 transition shadow hover:shadow-green-400/40"
+            >
+              ✅ Concluído
+            </button>
+            <button
+              onClick={() => atualizarStatus(a.id, 'cancelado')}
+              className="bg-yellow-500 text-white px-3 py-1 rounded hover:bg-yellow-600 transition shadow hover:shadow-yellow-400/40"
+            >
+              🚫 Cancelar
+            </button>
+            <button
+              onClick={() => reagendarAgendamento(a)}
+              className="bg-blue-500 text-white px-3 py-1 rounded hover:bg-blue-600 transition shadow hover:shadow-blue-400/40 flex items-center gap-1"
+            >
+              <RotateCcw size={16} /> Reagendar
+            </button>
+          </>
+        )}
+        <button
+          onClick={() => excluirAgendamento(a.id)}
+          className="bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600 transition shadow hover:shadow-red-400/40"
+        >
+          🗑️ Excluir
+        </button>
+      </div>
+    </li>
+  ))}
+</ul>
+
+
+
+
+
+
         )}
       </div>
     </main>
