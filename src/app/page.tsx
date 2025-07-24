@@ -8,12 +8,14 @@ export default function Home() {
   const [showInstall, setShowInstall] = useState(false)
   const [isIos, setIsIos] = useState(false)
   const [showIosHint, setShowIosHint] = useState(false)
+  const [isMobile, setIsMobile] = useState(false)
 
   useEffect(() => {
-    // Detecta iOS
+    // Detecta iOS e mobile
     if (typeof window !== 'undefined') {
       const ua = window.navigator.userAgent.toLowerCase()
       setIsIos(/iphone|ipad|ipod/.test(ua))
+      setIsMobile(window.innerWidth <= 640)
     }
 
     // Evento para Android/Chrome
@@ -44,60 +46,53 @@ export default function Home() {
 
   return (
     <main className="relative min-h-screen flex items-center justify-center bg-pink-100 overflow-hidden">
-      {/* Gradiente animado de fundo com blobs */}
+      {/* Blobs animados, reduzidos em mobile */}
       <div className="absolute inset-0 -z-10 overflow-hidden">
         <motion.div
-          className="absolute left-[-120px] top-[-60px] w-[360px] h-[340px] rounded-full bg-pink-400 opacity-30 blur-3xl"
-          animate={{
+          className={`absolute left-[-80px] top-[-40px] ${isMobile ? 'w-[140px] h-[100px] blur-lg' : 'w-[360px] h-[340px] blur-3xl'} rounded-full bg-pink-400 opacity-30`}
+          animate={!isMobile ? {
             x: [0, 40, 0, -20, 0],
             y: [0, 20, 0, -30, 0]
-          }}
-          transition={{ duration: 10, repeat: Infinity, ease: 'easeInOut' }}
+          } : false}
+          transition={{ duration: 8, repeat: Infinity, ease: 'easeInOut' }}
         />
         <motion.div
-          className="absolute right-[-100px] bottom-[-100px] w-[350px] h-[350px] rounded-full bg-fuchsia-300 opacity-30 blur-2xl"
-          animate={{
+          className={`absolute right-[-60px] bottom-[-60px] ${isMobile ? 'w-[80px] h-[80px] blur' : 'w-[350px] h-[350px] blur-2xl'} rounded-full bg-fuchsia-300 opacity-30`}
+          animate={!isMobile ? {
             x: [0, -20, 0, 30, 0],
             y: [0, -30, 0, 20, 0]
-          }}
-          transition={{ duration: 12, repeat: Infinity, ease: 'easeInOut' }}
+          } : false}
+          transition={{ duration: 9, repeat: Infinity, ease: 'easeInOut' }}
         />
         <motion.div
-          className="absolute left-1/2 -translate-x-1/2 top-1/3 w-[280px] h-[220px] rounded-full bg-pink-200 opacity-25 blur-2xl"
-          animate={{
-            scale: [1, 1.1, 0.95, 1],
-          }}
-          transition={{ duration: 8, repeat: Infinity, ease: 'easeInOut' }}
+          className={`absolute left-1/2 -translate-x-1/2 top-1/3 ${isMobile ? 'w-[90px] h-[60px] blur-sm' : 'w-[280px] h-[220px] blur-2xl'} rounded-full bg-pink-200 opacity-25`}
+          animate={{ scale: [1, 1.07, 0.98, 1] }}
+          transition={{ duration: 6, repeat: Infinity, ease: 'easeInOut' }}
         />
       </div>
 
       <motion.div
-        initial={{ opacity: 0, y: 40 }}
+        initial={{ opacity: 0, y: 30 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.8 }}
-        className="relative z-10 backdrop-blur-2xl bg-white/75 shadow-2xl border border-pink-200/70 rounded-3xl ring-2 ring-pink-300/40 max-w-sm w-full text-center"
+        transition={{ duration: 0.6 }}
+        className={`relative z-10 backdrop-blur-xl ${isMobile ? 'shadow-lg' : 'shadow-2xl'} bg-white/85 border border-pink-200/70 rounded-3xl ring-2 ring-pink-300/40 max-w-sm w-full text-center`}
       >
-        <div className="px-7 py-10 sm:px-10 sm:py-12">
+        <div className="px-5 py-8 sm:px-10 sm:py-12">
           <motion.img
             src="/salao.png"
             alt="Logo do Estúdio"
-            className="w-28 h-28 sm:w-32 sm:h-32 object-contain mx-auto mb-4 rounded-full shadow-xl border-2 border-pink-100"
+            className={`mx-auto mb-4 rounded-full border-2 border-pink-100 object-contain ${isMobile ? 'w-20 h-20 shadow' : 'w-32 h-32 shadow-xl'}`}
             initial={{ scale: 1, rotate: 0, y: 0 }}
             animate={{
-              y: [0, -14, 0],
-              rotate: [0, 6, -5, 0],
-              scale: [1, 1.13, 1],
-              boxShadow: [
-                '0 0 12px #f472b6',
-                '0 0 24px #ec4899',
-                '0 0 12px #f472b6'
-              ]
+              y: [0, -7, 0],
+              rotate: [0, 4, -3, 0],
+              scale: [1, 1.08, 1],
             }}
-            transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}
+            transition={{ duration: 2.4, repeat: Infinity, ease: 'easeInOut' }}
           />
 
           <motion.h1
-            className="text-3xl font-bold text-pink-700 mb-2 drop-shadow"
+            className="text-2xl sm:text-3xl font-bold text-pink-700 mb-2 drop-shadow"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 0.3 }}
@@ -105,10 +100,10 @@ export default function Home() {
             AgendaOne
           </motion.h1>
 
-          <div className="w-24 h-1 bg-gradient-to-r from-pink-400 to-fuchsia-500 mx-auto mb-4 rounded-full animate-pulse" />
+          <div className="w-20 sm:w-24 h-1 bg-gradient-to-r from-pink-400 to-fuchsia-500 mx-auto mb-4 rounded-full animate-pulse" />
 
           <motion.p
-            className="text-lg text-pink-600 flex items-center justify-center gap-2 mb-6 font-semibold"
+            className="text-base sm:text-lg text-pink-600 flex items-center justify-center gap-2 mb-6 font-semibold"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 0.6 }}
