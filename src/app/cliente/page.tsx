@@ -58,6 +58,14 @@ export default function ClientePage() {
             <ListChecks size={22} />
             Ver Meus Agendamentos
           </button>
+
+          <button
+            onClick={() => router.push('/cliente/perfil')}
+            className="flex items-center justify-center gap-2 w-full bg-gradient-to-r from-pink-500 to-fuchsia-600 hover:from-pink-600 hover:to-fuchsia-700 py-3 rounded-full text-white font-bold text-lg shadow-lg ring-2 ring-pink-300 transition-transform hover:scale-105 active:scale-98"
+          >
+            <CalendarPlus size={22} />
+            Meu Perfil
+          </button>
         </div>
 
         <button
