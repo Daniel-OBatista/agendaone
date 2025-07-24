@@ -11,13 +11,13 @@ import { Home, RotateCcw } from 'lucide-react'
 
 type Agendamento = {
   id: string
+  codigo_atendimento?: string
   data_hora: string
   status: string
   operador_id: string
   user_id: string
-  user?: { nome: string }[]
-  service?: { nome: string }[]
-  operador?: { nome: string }[]
+  user?: { id: string; nome: string } | null
+  service?: { id: string; nome: string } | null
 }
 
 type Operador = {
@@ -39,7 +39,6 @@ function gerarHorariosDisponiveis(duracao: number, agendamentos: string[], dataS
       horarios.push(hora)
     }
   }
-  // Exibir apenas horários futuros no dia atual
   if (format(dataSelecionada, 'yyyy-MM-dd') === format(new Date(), 'yyyy-MM-dd')) {
     const horaAtual = new Date().getHours()
     return horarios.filter(horaStr => {
@@ -97,19 +96,20 @@ export default function AgendamentosAdminPage() {
       .from('appointments')
       .select(`
   id,
+  codigo_atendimento,
   data_hora,
   status,
   operador_id,
   user_id,
-  user:fk_appointments_user(nome),
-  service:appointments_service_id_fkey(nome),
-  operador:fk_operador(nome)
+  user:fk_appointments_user (
+    id,
+    nome
+  ),
+  service:appointments_service_id_fkey (
+    id,
+    nome
+  )
 `)
-
-
-
-
-
 
       .order('data_hora', { ascending: true })
 
@@ -121,7 +121,14 @@ export default function AgendamentosAdminPage() {
       setErro('Erro ao carregar agendamentos: ' + error.message)
       setAgendamentos([])
     } else {
-      setAgendamentos(data || [])
+      // CORRIGE O ARRAY: transforma user/service em objeto único ou null
+      setAgendamentos(
+        (data || []).map((a: any) => ({
+          ...a,
+          user: Array.isArray(a.user) ? a.user[0] || null : a.user || null,
+          service: Array.isArray(a.service) ? a.service[0] || null : a.service || null,
+        }))
+      )
     }
     setCarregando(false)
   }
@@ -155,7 +162,7 @@ export default function AgendamentosAdminPage() {
     router.push(`/admin/reagendar?id=${agendamento.id}`)
   }
 
-  const badge = (status: string) => {
+  function badge(status: string) {
     const cores: Record<string, string> = {
       'concluído': 'bg-green-200 text-green-700',
       'cancelado': 'bg-yellow-200 text-yellow-700',
@@ -214,7 +221,6 @@ export default function AgendamentosAdminPage() {
           </select>
         </div>
       </div>
-
       <hr className="border-t border-pink-300 mb-6" />
       {erro && <p className="text-red-500 mb-4">{erro}</p>}
 
@@ -250,17 +256,15 @@ export default function AgendamentosAdminPage() {
         </div>
         {/* Foto do operador */}
         <div className="flex justify-center items-start">
-          <div className="flex justify-center items-start">
-            <img
-              src={
-                operadorSelecionado === 'todos'
-                  ? '/logo.png'
-                  : operadores.find((o) => o.id === operadorSelecionado)?.foto_url || '/logo.png'
-              }
-              alt="Foto do operador"
-              className="w-full max-w-md h-[280px] object-cover rounded-lg shadow-xl bg-zinc-100 mx-auto mt-4"
-            />
-          </div>
+          <img
+            src={
+              operadorSelecionado === 'todos'
+                ? '/logo.png'
+                : operadores.find((o) => o.id === operadorSelecionado)?.foto_url || '/logo.png'
+            }
+            alt="Foto do operador"
+            className="w-full max-w-md h-[280px] object-cover rounded-lg shadow-xl bg-zinc-100 mx-auto mt-4"
+          />
         </div>
       </div>
       <div className="mt-10">
@@ -270,64 +274,57 @@ export default function AgendamentosAdminPage() {
         <p className="text-sm text-gray-700 text-center mb-4">
           📊 Total: {agendamentosDoDia.length} agendamento{agendamentosDoDia.length !== 1 ? 's' : ''}
         </p>
-
         {carregando ? (
           <p className="text-center text-gray-500">Carregando agendamentos...</p>
         ) : agendamentosDoDia.length === 0 ? (
           <p className="text-center text-gray-500">Nenhum agendamento neste dia.</p>
         ) : (
-
-
-<ul className="flex flex-col gap-4 max-w-xl mx-auto">
-  {agendamentosDoDia.map((a) => (
-    <li
-      key={a.id}
-      className="border p-4 rounded bg-white/60 backdrop-blur-md shadow-md hover:shadow-lg transition-all"
-    >
-      <p><strong>👤 Cliente:</strong> {a.user?.[0]?.nome || '---'}</p>
-
-      <p><strong>💅 Serviço:</strong> {a.service?.[0]?.nome || '---'}</p>
-      <p><strong>🕒 Horário:</strong> {format(new Date(a.data_hora), 'HH:mm')}</p>
-      <p><strong>Status:</strong> {badge(a.status)}</p>
-      <div className="flex gap-2 mt-3 flex-wrap">
-        {a.status !== 'concluído' && (
-          <>
-            <button
-              onClick={() => atualizarStatus(a.id, 'concluído')}
-              className="bg-green-500 text-white px-3 py-1 rounded hover:bg-green-600 transition shadow hover:shadow-green-400/40"
-            >
-              ✅ Concluído
-            </button>
-            <button
-              onClick={() => atualizarStatus(a.id, 'cancelado')}
-              className="bg-yellow-500 text-white px-3 py-1 rounded hover:bg-yellow-600 transition shadow hover:shadow-yellow-400/40"
-            >
-              🚫 Cancelar
-            </button>
-            <button
-              onClick={() => reagendarAgendamento(a)}
-              className="bg-blue-500 text-white px-3 py-1 rounded hover:bg-blue-600 transition shadow hover:shadow-blue-400/40 flex items-center gap-1"
-            >
-              <RotateCcw size={16} /> Reagendar
-            </button>
-          </>
-        )}
-        <button
-          onClick={() => excluirAgendamento(a.id)}
-          className="bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600 transition shadow hover:shadow-red-400/40"
-        >
-          🗑️ Excluir
-        </button>
-      </div>
-    </li>
-  ))}
-</ul>
-
-
-
-
-
-
+          <ul className="flex flex-col gap-4 max-w-xl mx-auto">
+            {agendamentosDoDia.map((a) => (
+              <li
+                key={a.id}
+                className="border p-4 rounded bg-white/60 backdrop-blur-md shadow-md hover:shadow-lg transition-all"
+              >
+                <p><b>👤 Cliente:</b> {a.user?.nome || '---'}</p>
+                <p><b>💅 Serviço:</b> {a.service?.nome || '---'}</p>
+                <p><b>🕒 Horário:</b> {format(new Date(a.data_hora), 'HH:mm')}</p>
+                <p className="text-xs mt-1 text-pink-600 font-mono">
+                  <b>ID Atendimento:</b> {a.codigo_atendimento || a.id}
+                </p>
+                <p><b>Status:</b> {badge(a.status)}</p>
+                <div className="flex gap-2 mt-3 flex-wrap">
+                  {a.status !== 'concluído' && (
+                    <>
+                      <button
+                        onClick={() => atualizarStatus(a.id, 'concluído')}
+                        className="bg-green-500 text-white px-3 py-1 rounded hover:bg-green-600 transition shadow hover:shadow-green-400/40"
+                      >
+                        ✅ Concluído
+                      </button>
+                      <button
+                        onClick={() => atualizarStatus(a.id, 'cancelado')}
+                        className="bg-yellow-500 text-white px-3 py-1 rounded hover:bg-yellow-600 transition shadow hover:shadow-yellow-400/40"
+                      >
+                        🚫 Cancelar
+                      </button>
+                      <button
+                        onClick={() => reagendarAgendamento(a)}
+                        className="bg-blue-500 text-white px-3 py-1 rounded hover:bg-blue-600 transition shadow hover:shadow-blue-400/40 flex items-center gap-1"
+                      >
+                        <RotateCcw size={16} /> Reagendar
+                      </button>
+                    </>
+                  )}
+                  <button
+                    onClick={() => excluirAgendamento(a.id)}
+                    className="bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600 transition shadow hover:shadow-red-400/40"
+                  >
+                    🗑️ Excluir
+                  </button>
+                </div>
+              </li>
+            ))}
+          </ul>
         )}
       </div>
     </main>
