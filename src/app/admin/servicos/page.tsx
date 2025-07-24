@@ -33,7 +33,7 @@ export default function ServicosAdminPage() {
   const [erro, setErro] = useState('')
   const [modoEdicao, setModoEdicao] = useState(false)
   const [idEditando, setIdEditando] = useState<string | null>(null)
-  const [ordenarPor, setOrdenarPor] = useState<'nome' | 'valor' | 'created_at'>('created_at')
+  // Removido o filtro de ordenação
   const [filtroBusca, setFiltroBusca] = useState('')
 
   const router = useRouter()
@@ -44,7 +44,7 @@ export default function ServicosAdminPage() {
 
   useEffect(() => {
     fetchServicos()
-  }, [ordenarPor])
+  }, []) // Removido [ordenarPor] para buscar só uma vez
 
   async function verificarAdmin() {
     const { data: userData } = await supabase.auth.getUser()
@@ -68,7 +68,7 @@ export default function ServicosAdminPage() {
     const { data, error } = await supabase
       .from('services')
       .select('*')
-      .order(ordenarPor, { ascending: true })
+      .order('created_at', { ascending: true }) // Sempre por data de criação
 
     if (!error && data) {
       setServicos(data)
@@ -188,7 +188,7 @@ export default function ServicosAdminPage() {
   const cardHeight = 285
 
   return (
-    <main className="min-h-screen bg-gradient-to-br from-pink-50 via-white to-fuchsia-100 text-zinc-800 px-0 sm:px-8 md:px-16 py-8 relative overflow-hidden">
+    <main className="min-h-screen bg-gradient-to-br from-pink-50 via-white to-fuchsia-100 text-zinc-800 px-3 sm:px-8 md:px-16 py-8 relative overflow-hidden">
       <div className="absolute -top-32 left-1/2 -translate-x-1/2 w-[800px] h-[500px] bg-pink-200 opacity-30 rounded-full blur-3xl pointer-events-none" />
       <div className="absolute bottom-0 right-0 w-80 h-80 bg-fuchsia-200 opacity-25 rounded-full blur-2xl pointer-events-none" />
 
@@ -210,7 +210,7 @@ export default function ServicosAdminPage() {
       </button>
 
       <div className="w-full flex justify-center">
-        <h1 className="text-lg sm:text-3xl font-extrabold text-pink-700 text-center mb-3 sm:mb-7 tracking-tight relative inline-block leading-tight">
+        <h1 className="text-4xl font-extrabold text-pink-700 text-center mb-3 sm:mb-7 tracking-tight relative inline-block leading-tight">
           Gerenciar Serviços
           <span className="block h-1 w-2/3 mx-auto bg-gradient-to-r from-pink-400 to-fuchsia-500 rounded-full mt-2 animate-pulse" />
         </h1>
@@ -294,23 +294,16 @@ export default function ServicosAdminPage() {
         {erro && <p className="text-red-500 text-xs mt-2">{erro}</p>}
       </div>
 
-      <div className="flex flex-col sm:flex-row justify-between items-center gap-4 mb-7 max-w-xl mx-auto">
+      {/* Filtro de busca, sem select */}
+      <div className="flex flex-col gap-3 justify-between items-center mb-7 max-w-xl mx-auto w-full">
         <input
           type="text"
           placeholder="Buscar serviço..."
           value={filtroBusca}
           onChange={(e) => setFiltroBusca(e.target.value)}
-          className="p-2 border border-pink-200 rounded-xl text-base w-full sm:w-auto"
+          className="p-2 border border-pink-200 rounded-xl text-base w-full bg-white"
+          style={{ maxWidth: '99vw' }}
         />
-        <select
-          value={ordenarPor}
-          onChange={(e) => setOrdenarPor(e.target.value as 'nome' | 'valor' | 'created_at')}
-          className="border border-pink-200 rounded-xl p-2 text-base bg-white focus:ring-2 focus:ring-pink-400"
-        >
-          <option value="created_at">Mais recentes</option>
-          <option value="nome">Nome (A-Z)</option>
-          <option value="valor">Valor (menor → maior)</option>
-        </select>
       </div>
 
       {/* CARROSSEL SWIPER */}
@@ -441,6 +434,12 @@ export default function ServicosAdminPage() {
             font-size: 1.05rem !important;
             margin-bottom: 1rem !important;
           }
+          .bg-white\\/90 {
+            margin-left: 0 !important;
+            margin-right: 0 !important;
+            width: 99vw !important;
+            max-width: 99vw !important;
+          }
           .swiper-slide > div {
             width: 96vw !important;
             min-width: 0 !important;
@@ -453,6 +452,10 @@ export default function ServicosAdminPage() {
             padding-right: 0 !important;
             margin-left: 0 !important;
             margin-right: 0 !important;
+          }
+          main {
+            padding-left: 0.75rem !important; /* px-3 */
+            padding-right: 0.75rem !important;
           }
         }
       `}</style>
