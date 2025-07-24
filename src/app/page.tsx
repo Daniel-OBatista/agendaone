@@ -137,12 +137,13 @@ export default function Home() {
         </div>
 
         <button
-          onClick={() => location.reload()}
-          className="absolute bottom-2 right-2 p-2 rounded-full shadow hover:scale-110 transition duration-300 bg-white/80 hover:bg-pink-200"
-          aria-label="Atualizar página"
-        >
-          <img src="/atualizar.png" alt="Atualizar" className="w-6 h-6 object-contain" />
-        </button>
+  onClick={() => location.reload()}
+  className="absolute top-2 right-2 p-2 rounded-full shadow hover:scale-110 transition duration-300 bg-white/80 hover:bg-pink-200"
+  aria-label="Atualizar página"
+>
+  <img src="/atualizar.png" alt="Atualizar" className="w-6 h-6 object-contain" />
+</button>
+
       </motion.div>
 
       {/* Banner automático Android/Chrome para instalar como PWA */}
