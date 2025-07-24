@@ -1,8 +1,47 @@
 'use client'
 
+import { useEffect, useState } from 'react'
 import { motion } from 'framer-motion'
 
 export default function Home() {
+  const [deferredPrompt, setDeferredPrompt] = useState<any>(null)
+  const [showInstall, setShowInstall] = useState(false)
+  const [isIos, setIsIos] = useState(false)
+  const [showIosHint, setShowIosHint] = useState(false)
+
+  useEffect(() => {
+    // Detecta iOS
+    if (typeof window !== 'undefined') {
+      const ua = window.navigator.userAgent.toLowerCase()
+      setIsIos(/iphone|ipad|ipod/.test(ua))
+    }
+
+    // Evento para Android/Chrome
+    const handleBeforeInstallPrompt = (e: any) => {
+      e.preventDefault()
+      setDeferredPrompt(e)
+      setShowInstall(true)
+    }
+
+    window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt)
+    return () => {
+      window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt)
+    }
+  }, [])
+
+  // Handler do botão fixo (sempre visível)
+  const handleInstallClick = async () => {
+    if (deferredPrompt) {
+      deferredPrompt.prompt()
+      const { outcome } = await deferredPrompt.userChoice
+      if (outcome === "accepted") setShowInstall(false)
+    } else if (isIos) {
+      setShowIosHint(true)
+    } else {
+      alert('Para instalar, acesse pelo Chrome no Android e clique nos 3 pontinhos do navegador, depois "Instalar app" ou "Adicionar à tela inicial".')
+    }
+  }
+
   return (
     <main className="relative min-h-screen flex items-center justify-center bg-pink-100 overflow-hidden">
       {/* Gradiente animado de fundo com blobs */}
@@ -110,6 +149,60 @@ export default function Home() {
           <img src="/atualizar.png" alt="Atualizar" className="w-6 h-6 object-contain" />
         </button>
       </motion.div>
+
+      {/* Banner automático Android/Chrome para instalar como PWA */}
+      {showInstall && (
+        <motion.div
+          className="fixed bottom-24 left-1/2 -translate-x-1/2 bg-white border border-pink-300 shadow-2xl rounded-2xl px-4 py-3 flex items-center gap-3 z-50"
+          initial={{ opacity: 0, y: 60 }}
+          animate={{ opacity: 1, y: 0 }}
+        >
+          <img src="/icon-192.png" alt="App" className="w-10 h-10 rounded-xl" />
+          <span className="text-pink-700 font-semibold">
+            Instale o AgendaOne na tela inicial!
+          </span>
+          <button
+            className="ml-2 bg-pink-500 text-white px-4 py-2 rounded-full font-bold shadow hover:bg-pink-700 transition"
+            onClick={async () => {
+              if (deferredPrompt) {
+                deferredPrompt.prompt();
+                const { outcome } = await deferredPrompt.userChoice;
+                if (outcome === "accepted") {
+                  setShowInstall(false);
+                }
+              }
+            }}
+          >
+            Instalar
+          </button>
+        </motion.div>
+      )}
+
+      {/* Botão fixo para instalar o app (sempre visível) */}
+      <button
+        className="fixed bottom-5 right-5 z-50 bg-gradient-to-r from-pink-500 to-fuchsia-600 text-white font-bold rounded-full px-6 py-3 shadow-lg hover:bg-pink-700 hover:scale-105 transition"
+        onClick={handleInstallClick}
+      >
+        📲 Instalar App
+      </button>
+
+      {/* Banner para iOS: instrução manual */}
+      {(isIos && showIosHint) && (
+        <motion.div
+          className="fixed bottom-24 left-1/2 -translate-x-1/2 bg-white border border-pink-300 shadow-xl rounded-2xl px-4 py-3 flex items-center gap-3 z-50"
+          initial={{ opacity: 0, y: 60 }}
+          animate={{ opacity: 1, y: 0 }}
+        >
+          <img src="/icon-192.png" className="w-8 h-8" alt="Logo" />
+          <span className="text-pink-700 font-semibold">
+            Toque no <b>compartilhar</b> e depois em <b>'Adicionar à Tela de Início'</b>
+          </span>
+          <button
+            onClick={() => setShowIosHint(false)}
+            className="ml-2 bg-pink-200 px-3 py-1 rounded hover:bg-pink-300 text-pink-700"
+          >OK</button>
+        </motion.div>
+      )}
     </main>
   )
 }
