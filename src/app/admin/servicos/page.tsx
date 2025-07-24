@@ -218,82 +218,83 @@ export default function ServicosAdminPage() {
       </div>
 
       <div className="servicos-form-card bg-white/90 shadow-2xl rounded-2xl p-4 sm:p-6 mb-6 max-w-xl mx-auto backdrop-blur-lg border-2 border-pink-100">
-        <div className="flex gap-4 flex-col sm:flex-row">
-          <div className="flex-1">
-            <input
-              type="text"
-              placeholder="Nome do serviço"
-              value={nome}
-              onChange={(e) => setNome(e.target.value)}
-              className="w-full p-2 rounded-xl mb-2 border border-pink-200 focus:ring-2 focus:ring-pink-400 text-base"
-            />
-            <textarea
-              placeholder="Descrição"
-              value={descricao}
-              onChange={(e) => setDescricao(e.target.value)}
-              className="w-full p-2 rounded-xl mb-2 border border-pink-200 focus:ring-2 focus:ring-pink-400 text-base"
-            />
-            <div className="flex gap-2 mb-2">
-              <input
-                type="number"
-                placeholder="Valor (R$)"
-                value={valor}
-                onChange={(e) => setValor(e.target.value)}
-                className="w-1/2 p-2 rounded-xl border border-pink-200 focus:ring-2 focus:ring-pink-400 text-base"
-              />
-              <input
-                type="number"
-                placeholder="Duração (min)"
-                value={duracao}
-                onChange={(e) => setDuracao(e.target.value)}
-                className="w-1/2 p-2 rounded-xl border border-pink-200 focus:ring-2 focus:ring-pink-400 text-base"
-              />
-            </div>
-            <div className="mb-2">
-              <label className="block text-sm font-medium text-pink-700 mb-1">Imagem:</label>
-              <div className="flex items-center gap-2">
-                <label className="bg-pink-500 text-white px-3 py-1.5 rounded-lg cursor-pointer hover:bg-pink-700 text-sm shadow">
-                  Escolher imagem
-                  <input
-                    type="file"
-                    accept="image/*"
-                    onChange={handleImagemSelecionada}
-                    className="hidden"
-                  />
-                </label>
-                <span className="text-xs text-zinc-500">
-                  {imagem?.name || 'Nenhuma imagem selecionada'}
-                </span>
-              </div>
-              {imagemPreview && (
-                <img
-                  src={imagemPreview}
-                  alt="Pré-visualização"
-                  className="mt-2 rounded-xl shadow-md w-full max-h-32 object-contain border"
-                />
-              )}
-            </div>
-          </div>
-        </div>
-
-        <div className="flex gap-2 mt-3">
-          <button
-            onClick={adicionarOuAtualizarServico}
-            className="w-full bg-gradient-to-r from-pink-500 to-fuchsia-500 text-white py-2 rounded-xl font-bold hover:from-pink-700 hover:to-fuchsia-700 shadow hover:scale-105 transition-all"
-          >
-            {modoEdicao ? 'Salvar Alterações' : 'Adicionar Serviço'}
-          </button>
-          {modoEdicao && (
-            <button
-              onClick={cancelarEdicao}
-              className="bg-zinc-200 text-zinc-700 px-5 py-2 rounded-xl font-semibold hover:bg-zinc-300 shadow transition"
-            >
-              Cancelar
-            </button>
-          )}
-        </div>
-        {erro && <p className="text-red-500 text-xs mt-2">{erro}</p>}
+  <div className="flex gap-4 flex-col sm:flex-row">
+    <div className="flex-1">
+      <input
+        type="text"
+        placeholder="Nome do serviço"
+        value={nome}
+        onChange={(e) => setNome(e.target.value)}
+        className="w-full p-2 rounded-xl mb-2 border border-pink-200 focus:ring-2 focus:ring-pink-400 text-base"
+      />
+      <textarea
+        placeholder="Descrição"
+        value={descricao}
+        onChange={(e) => setDescricao(e.target.value)}
+        className="w-full p-2 rounded-xl mb-2 border border-pink-200 focus:ring-2 focus:ring-pink-400 text-base"
+      />
+      <div className="flex gap-2 mb-2">
+        <input
+          type="number"
+          placeholder="Valor (R$)"
+          value={valor}
+          onChange={(e) => setValor(e.target.value)}
+          className="w-1/2 p-2 rounded-xl border border-pink-200 focus:ring-2 focus:ring-pink-400 text-base"
+        />
+        <input
+          type="number"
+          placeholder="Duração (min)"
+          value={duracao}
+          onChange={(e) => setDuracao(e.target.value)}
+          className="w-1/2 p-2 rounded-xl border border-pink-200 focus:ring-2 focus:ring-pink-400 text-base"
+        />
       </div>
+      <div className="mb-2">
+        <label className="block text-sm font-medium text-pink-700 mb-1">Imagem:</label>
+        <div className="flex items-center gap-2">
+          <label className="bg-pink-500 text-white px-3 py-1.5 rounded-lg cursor-pointer hover:bg-pink-700 text-sm shadow">
+            Escolher imagem
+            <input
+              type="file"
+              accept="image/*"
+              onChange={handleImagemSelecionada}
+              className="hidden"
+            />
+          </label>
+          <span className="text-xs text-zinc-500">
+            {imagem?.name || 'Nenhuma imagem selecionada'}
+          </span>
+        </div>
+        {imagemPreview && (
+          <img
+            src={imagemPreview}
+            alt="Pré-visualização"
+            className="mt-2 rounded-xl shadow-md w-full max-h-32 object-contain border"
+          />
+        )}
+      </div>
+    </div>
+  </div>
+
+  <div className="flex gap-2 mt-3">
+    <button
+      onClick={adicionarOuAtualizarServico}
+      className="w-full bg-gradient-to-r from-pink-500 to-fuchsia-500 text-white py-2 rounded-xl font-bold hover:from-pink-700 hover:to-fuchsia-700 shadow hover:scale-105 transition-all"
+    >
+      {modoEdicao ? 'Salvar Alterações' : 'Adicionar Serviço'}
+    </button>
+    {modoEdicao && (
+      <button
+        onClick={cancelarEdicao}
+        className="bg-zinc-200 text-zinc-700 px-5 py-2 rounded-xl font-semibold hover:bg-zinc-300 shadow transition"
+      >
+        Cancelar
+      </button>
+    )}
+  </div>
+  {erro && <p className="text-red-500 text-xs mt-2">{erro}</p>}
+</div>
+
 
       {/* Filtro de busca */}
       <div className="flex flex-col gap-3 justify-between items-center mb-7 max-w-xl mx-auto w-full">
@@ -443,20 +444,36 @@ export default function ServicosAdminPage() {
         }
         @media (max-width: 640px) {
           .servicos-form-card {
-            padding: 0.8rem 0.7rem !important;
-            max-width: 98vw !important;
-            font-size: 0.98rem !important;
-            margin-bottom: 1.5rem !important;
+            padding: 0.7rem 0.45rem !important;
+            max-width: 94vw !important;
+            margin-bottom: 1rem !important;
+            border-radius: 1.15rem !important;
+            box-shadow: 0 2px 8px #d946ef1a !important;
+            font-size: 0.93rem !important;
           }
           .servicos-form-card input,
           .servicos-form-card textarea {
-            font-size: 0.98rem !important;
-            padding: 0.7rem !important;
+            font-size: 0.95rem !important;
+            padding: 0.55rem 0.6rem !important;
+            border-radius: 0.9rem !important;
           }
           .servicos-form-card label {
-            font-size: 0.98rem !important;
+            font-size: 0.93rem !important;
+            margin-bottom: 0.1rem !important;
           }
-        }        
+          .servicos-form-card img {
+            max-height: 60px !important;
+            border-radius: 0.7rem !important;
+          }
+          .servicos-form-card .flex {
+            gap: 0.45rem !important;
+          }
+          .servicos-form-card button {
+            font-size: 0.97rem !important;
+            padding: 0.68rem 0 !important;
+            border-radius: 0.9rem !important;
+          }
+        }         
         @media (min-width: 641px) {
           .swiper-slide-prev,
           .swiper-slide-next {

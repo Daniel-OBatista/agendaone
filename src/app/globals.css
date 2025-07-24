@@ -129,7 +129,6 @@ body {
   transition: background 0.2s;
 }
 
-
 .react-calendar__tile.highlight::after {
   content: '•';
   color: #b91c1c;
@@ -141,3 +140,20 @@ body {
   text-align: center;
 }
 
+@media (max-width: 640px) {
+  .swiper-card {
+    width: 89vw !important;
+    max-width: 92vw !important;
+    min-width: 0 !important;
+    padding: 0.5rem 0.4rem !important;
+    border-radius: 0.9rem !important;
+  }
+  .swiper-card img {
+    height: 300px !important;
+    border-radius: 0.7rem !important;
+  }
+  .swiper-card p,
+  .swiper-card span {
+    font-size: 0.93rem !important;
+  }
+}
