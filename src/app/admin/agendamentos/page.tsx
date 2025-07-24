@@ -7,7 +7,7 @@ import Calendar from 'react-calendar'
 import 'react-calendar/dist/Calendar.css'
 import { format, isSameDay, parseISO } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
-import { Home, RotateCcw } from 'lucide-react'
+import { Home, RotateCcw, XCircle, CheckCircle } from 'lucide-react'
 
 type Agendamento = {
   id: string
@@ -15,102 +15,43 @@ type Agendamento = {
   data_hora: string
   status: string
   operador_id: string
+  service_id: string
   user_id: string
-  user?: { id: string; nome: string } | null
-  service?: { id: string; nome: string } | null
 }
 
-type Operador = {
-  id: string
-  nome: string
-  foto_url?: string
-}
-
-function gerarHorariosDisponiveis(duracao: number, agendamentos: string[], dataSelecionada: Date) {
-  const horarios: string[] = []
-  const horaInicio = 8
-  const horaFim = 18
-  const intervalo = duracao
-
-  for (let h = horaInicio; h < horaFim; h++) {
-    for (let m = 0; m < 60; m += intervalo) {
-      const hora = `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`
-      if (h >= 12 && h < 13) continue
-      horarios.push(hora)
-    }
-  }
-  if (format(dataSelecionada, 'yyyy-MM-dd') === format(new Date(), 'yyyy-MM-dd')) {
-    const horaAtual = new Date().getHours()
-    return horarios.filter(horaStr => {
-      const [h] = horaStr.split(':').map(Number)
-      return h > horaAtual && !agendamentos.includes(horaStr)
-    })
-  }
-  return horarios.filter(hora => !agendamentos.includes(hora))
-}
+type Operador = { id: string; nome: string; foto_url?: string }
+type Servico = { id: string; nome: string }
+type Cliente = { id: string; nome: string }
 
 export default function AgendamentosAdminPage() {
   const [agendamentos, setAgendamentos] = useState<Agendamento[]>([])
   const [operadores, setOperadores] = useState<Operador[]>([])
+  const [servicos, setServicos] = useState<Servico[]>([])
+  const [clientes, setClientes] = useState<Cliente[]>([])
   const [operadorSelecionado, setOperadorSelecionado] = useState<string>('todos')
   const [carregando, setCarregando] = useState(true)
   const [erro, setErro] = useState('')
+  const [sucesso, setSucesso] = useState('')
   const [dataSelecionada, setDataSelecionada] = useState<Date>(new Date())
   const router = useRouter()
 
-  useEffect(() => {
-    async function verificarAdmin() {
-      const { data: userData } = await supabase.auth.getUser()
-      const { data: perfil } = await supabase
-        .from('users')
-        .select('role')
-        .eq('id', userData.user?.id)
-        .single()
-
-      if (perfil?.role !== 'admin') {
-        router.push('/')
-        return
-      }
-      await carregarOperadores()
-    }
-    verificarAdmin()
-  }, [router])
-
-  useEffect(() => {
-    fetchAgendamentos()
-    // eslint-disable-next-line
-  }, [operadorSelecionado, dataSelecionada])
-
-  async function carregarOperadores() {
-    const { data, error } = await supabase.from('operadores').select('id, nome, foto_url').order('nome')
-    if (error) {
-      setErro('Erro ao carregar operadores: ' + error.message)
-    } else {
-      setOperadores(data as Operador[])
-    }
+  // Carrega operadores, serviços e clientes
+  async function fetchRelacionamentos() {
+    const { data: ops } = await supabase.from('operadores').select('id, nome, foto_url')
+    setOperadores(ops || [])
+    const { data: svs } = await supabase.from('services').select('id, nome')
+    setServicos(svs || [])
+    const { data: cls } = await supabase.from('users').select('id, nome')
+    setClientes(cls || [])
   }
 
+  // Busca agendamentos
   async function fetchAgendamentos() {
     setCarregando(true)
+    setErro('')
     let query = supabase
       .from('appointments')
-      .select(`
-  id,
-  codigo_atendimento,
-  data_hora,
-  status,
-  operador_id,
-  user_id,
-  user:fk_appointments_user (
-    id,
-    nome
-  ),
-  service:appointments_service_id_fkey (
-    id,
-    nome
-  )
-`)
-
+      .select('id, codigo_atendimento, data_hora, status, operador_id, service_id, user_id')
       .order('data_hora', { ascending: true })
 
     if (operadorSelecionado !== 'todos') {
@@ -121,61 +62,71 @@ export default function AgendamentosAdminPage() {
       setErro('Erro ao carregar agendamentos: ' + error.message)
       setAgendamentos([])
     } else {
-      // CORRIGE O ARRAY: transforma user/service em objeto único ou null
-      setAgendamentos(
-        (data || []).map((a: any) => ({
-          ...a,
-          user: Array.isArray(a.user) ? a.user[0] || null : a.user || null,
-          service: Array.isArray(a.service) ? a.service[0] || null : a.service || null,
-        }))
-      )
+      setAgendamentos(data || [])
     }
     setCarregando(false)
   }
 
-  async function atualizarStatus(id: string, novoStatus: string) {
-    const confirmar = confirm(`Deseja realmente atualizar o status para "${novoStatus}"?`)
+  useEffect(() => {
+    fetchRelacionamentos()
+  }, [])
+
+  useEffect(() => {
+    fetchAgendamentos()
+    // eslint-disable-next-line
+  }, [operadorSelecionado, dataSelecionada])
+
+  // Funções de ação
+  async function marcarComoConcluido(id: string) {
+    const confirmar = confirm('Marcar como concluído?')
     if (!confirmar) return
-    const { error } = await supabase
-      .from('appointments')
-      .update({ status: novoStatus })
-      .eq('id', id)
-    if (!error) {
-      await fetchAgendamentos()
+    const { error } = await supabase.from('appointments').update({ status: 'concluído' }).eq('id', id)
+    if (error) {
+      alert('Erro ao concluir: ' + error.message)
+      setErro('Erro ao concluir: ' + error.message)
     } else {
-      alert('Erro ao atualizar status: ' + error.message)
+      setSucesso('Agendamento concluído!')
+      await fetchAgendamentos()
+      setTimeout(() => setSucesso(''), 3000)
     }
   }
 
-  async function excluirAgendamento(id: string) {
-    const confirmar = confirm('Deseja realmente excluir este agendamento?')
+  async function cancelarAgendamento(id: string) {
+    const confirmar = confirm('Cancelar este agendamento?')
     if (!confirmar) return
-    const { error } = await supabase.from('appointments').delete().eq('id', id)
-    if (!error) {
-      await fetchAgendamentos()
+    const { error } = await supabase.from('appointments').update({ status: 'cancelado' }).eq('id', id)
+    if (error) {
+      alert('Erro ao cancelar: ' + error.message)
+      setErro('Erro ao cancelar: ' + error.message)
     } else {
-      alert('Erro ao excluir: ' + error.message)
+      setSucesso('Agendamento cancelado!')
+      await fetchAgendamentos()
+      setTimeout(() => setSucesso(''), 3000)
     }
   }
 
-  function reagendarAgendamento(agendamento: Agendamento) {
-    router.push(`/admin/reagendar?id=${agendamento.id}`)
+  function reagendarAgendamento(serviceId: string, agendamentoId: string) {
+    // Marca como cancelado, depois redireciona para tela de reagendamento
+    cancelarAgendamento(agendamentoId).then(() => {
+      router.push(`/admin/reagendar?service=${serviceId}&reagendar=${agendamentoId}`)
+    })
   }
 
-  function badge(status: string) {
-    const cores: Record<string, string> = {
-      'concluído': 'bg-green-200 text-green-700',
-      'cancelado': 'bg-yellow-200 text-yellow-700',
-      'pendente': 'bg-gray-200 text-gray-700',
-      'agendado': 'bg-pink-200 text-pink-700'
-    }
-    return (
-      <span className={`px-2 py-1 rounded text-sm font-medium ${cores[status] || 'bg-gray-200'}`}>
-        {status}
-      </span>
-    )
+  // Utils para mostrar nomes nas relações
+  function nomeCliente(userId: string) {
+    return clientes.find(c => c.id === userId)?.nome || '---'
+  }
+  function nomeOperador(operadorId: string) {
+    return operadores.find(o => o.id === operadorId)?.nome || '---'
+  }
+  function nomeServico(serviceId: string) {
+    return servicos.find(s => s.id === serviceId)?.nome || '---'
+  }
+  function fotoOperador(operadorId: string) {
+    return operadores.find(o => o.id === operadorId)?.foto_url || '/logo.png'
   }
 
+  // Filtros para o calendário
   const agendamentosDoDia = agendamentos.filter((a) =>
     isSameDay(parseISO(a.data_hora), dataSelecionada) &&
     (operadorSelecionado === 'todos' || a.operador_id === operadorSelecionado)
@@ -185,11 +136,53 @@ export default function AgendamentosAdminPage() {
     .filter((a) => a.status === 'agendado' || a.status === 'concluído')
     .map((a) => format(new Date(a.data_hora), 'HH:mm'))
 
+  function gerarHorariosDisponiveis(duracao: number, agendados: string[], data: Date) {
+    const horarios: string[] = []
+    const horaInicio = 8
+    const horaFim = 18
+    for (let h = horaInicio; h < horaFim; h++) {
+      for (let m = 0; m < 60; m += duracao) {
+        if (h >= 12 && h < 13) continue
+        const hora = `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`
+        horarios.push(hora)
+      }
+    }
+    if (format(data, 'yyyy-MM-dd') === format(new Date(), 'yyyy-MM-dd')) {
+      const horaAtual = new Date().getHours()
+      return horarios.filter(horaStr => {
+        const [h] = horaStr.split(':').map(Number)
+        return h > horaAtual && !agendados.includes(horaStr)
+      })
+    }
+    return horarios.filter(hora => !agendados.includes(hora))
+  }
   const horariosDisponiveis = gerarHorariosDisponiveis(60, horariosAgendados, dataSelecionada)
 
+  // Highlight calendário
   const marcarDias = ({ date }: { date: Date }) => {
     const tem = agendamentos.some((a) => isSameDay(parseISO(a.data_hora), date))
     return tem ? 'highlight' : undefined
+  }
+
+  // Badge de status
+  function badge(status: string) {
+    if (status === 'concluído')
+      return (
+        <span className="inline-flex items-center gap-1 bg-green-100 border border-green-300 text-green-700 px-3 py-1 rounded-full text-xs font-bold">
+          <CheckCircle size={15} /> Concluído
+        </span>
+      )
+    if (status === 'cancelado')
+      return (
+        <span className="inline-flex items-center gap-1 bg-red-100 border border-red-300 text-red-600 px-3 py-1 rounded-full text-xs font-bold">
+          <XCircle size={15} /> Cancelado
+        </span>
+      )
+    return (
+      <span className="inline-flex items-center gap-1 bg-pink-100 border border-pink-300 text-pink-700 px-3 py-1 rounded-full text-xs font-bold">
+        Agendado
+      </span>
+    )
   }
 
   return (
@@ -197,13 +190,14 @@ export default function AgendamentosAdminPage() {
       <div className="mb-4 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div className="flex items-center gap-4">
           <button
+            type="button"
             onClick={() => router.push('/admin')}
             className="flex items-center gap-2 text-white bg-pink-500 px-3 py-1.5 rounded-md hover:bg-pink-600 text-sm"
           >
             <Home size={18} />
             Início
           </button>
-          <h1 className="text-2xl font-bold text-pink-700">📅 Meus Atendimentos</h1>
+          <h1 className="text-2xl font-bold text-pink-700">📅 Agendamentos</h1>
         </div>
         <div>
           <label className="text-sm text-pink-800 font-medium mr-2">Filtrar por operador:</label>
@@ -223,8 +217,10 @@ export default function AgendamentosAdminPage() {
       </div>
       <hr className="border-t border-pink-300 mb-6" />
       {erro && <p className="text-red-500 mb-4">{erro}</p>}
+      {sucesso && <p className="text-green-700 bg-green-100 border border-green-200 rounded-md px-4 py-2 mb-2">{sucesso}</p>}
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-start">
+        {/* Calendário */}
         <div>
           <Calendar
             locale="pt-BR"
@@ -237,6 +233,7 @@ export default function AgendamentosAdminPage() {
             className="rounded-xl shadow-xl p-4 border border-pink-200 bg-white/80 backdrop-blur-md calendar-modern"
           />
         </div>
+        {/* Horários disponíveis */}
         <div>
           <h3 className="text-lg font-semibold text-pink-700 mb-2">⏳ Horários Disponíveis</h3>
           {horariosDisponiveis.length === 0 ? (
@@ -246,7 +243,7 @@ export default function AgendamentosAdminPage() {
               {horariosDisponiveis.map((hora) => (
                 <span
                   key={hora}
-                  className="bg-white border border-pink-300 text-pink-700 px-4 py-[6px] rounded-full text-sm font-medium shadow hover:shadow-pink-300/50 hover:scale-105 transition-all duration-300 text-center leading-tight flex items-center justify-center"
+                  className="bg-white border border-pink-300 text-pink-700 px-4 py-[6px] rounded-full text-sm font-medium shadow hover:bg-pink-300 hover:text-pink-900 hover:shadow-pink-400/70 hover:scale-105 transition-all duration-300 text-center leading-tight flex items-center justify-center cursor-pointer"
                 >
                   {hora}
                 </span>
@@ -260,7 +257,7 @@ export default function AgendamentosAdminPage() {
             src={
               operadorSelecionado === 'todos'
                 ? '/logo.png'
-                : operadores.find((o) => o.id === operadorSelecionado)?.foto_url || '/logo.png'
+                : fotoOperador(operadorSelecionado)
             }
             alt="Foto do operador"
             className="w-full max-w-md h-[280px] object-cover rounded-lg shadow-xl bg-zinc-100 mx-auto mt-4"
@@ -285,48 +282,62 @@ export default function AgendamentosAdminPage() {
                 key={a.id}
                 className="border p-4 rounded bg-white/60 backdrop-blur-md shadow-md hover:shadow-lg transition-all"
               >
-                <p><b>👤 Cliente:</b> {a.user?.nome || '---'}</p>
-                <p><b>💅 Serviço:</b> {a.service?.nome || '---'}</p>
+                <p><b>👤 Cliente:</b> {nomeCliente(a.user_id)}</p>
+                <p><b>👩‍🔧 Profissional:</b> {nomeOperador(a.operador_id)}</p>
+                <p><b>💅 Serviço:</b> {nomeServico(a.service_id)}</p>
                 <p><b>🕒 Horário:</b> {format(new Date(a.data_hora), 'HH:mm')}</p>
                 <p className="text-xs mt-1 text-pink-600 font-mono">
                   <b>ID Atendimento:</b> {a.codigo_atendimento || a.id}
                 </p>
                 <p><b>Status:</b> {badge(a.status)}</p>
                 <div className="flex gap-2 mt-3 flex-wrap">
-                  {a.status !== 'concluído' && (
+                  {a.status === 'agendado' && (
                     <>
                       <button
-                        onClick={() => atualizarStatus(a.id, 'concluído')}
+                        type="button"
+                        onClick={() => marcarComoConcluido(a.id)}
                         className="bg-green-500 text-white px-3 py-1 rounded hover:bg-green-600 transition shadow hover:shadow-green-400/40"
                       >
-                        ✅ Concluído
+                        <CheckCircle size={16} /> Concluir
                       </button>
                       <button
-                        onClick={() => atualizarStatus(a.id, 'cancelado')}
-                        className="bg-yellow-500 text-white px-3 py-1 rounded hover:bg-yellow-600 transition shadow hover:shadow-yellow-400/40"
+                        type="button"
+                        onClick={() => cancelarAgendamento(a.id)}
+                        className="bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600 transition shadow hover:shadow-red-400/40"
                       >
-                        🚫 Cancelar
+                        <XCircle size={16} /> Cancelar
                       </button>
                       <button
-                        onClick={() => reagendarAgendamento(a)}
+                        type="button"
+                        onClick={() => reagendarAgendamento(a.service_id, a.id)}
                         className="bg-blue-500 text-white px-3 py-1 rounded hover:bg-blue-600 transition shadow hover:shadow-blue-400/40 flex items-center gap-1"
                       >
                         <RotateCcw size={16} /> Reagendar
                       </button>
                     </>
                   )}
-                  <button
-                    onClick={() => excluirAgendamento(a.id)}
-                    className="bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600 transition shadow hover:shadow-red-400/40"
-                  >
-                    🗑️ Excluir
-                  </button>
+                  {a.status === 'concluído' && (
+                    <span className="text-green-700 font-semibold">Atendimento concluído</span>
+                  )}
+                  {a.status === 'cancelado' && (
+                    <span className="text-red-600 font-semibold">Atendimento cancelado</span>
+                  )}
                 </div>
               </li>
             ))}
           </ul>
         )}
       </div>
+      <style jsx global>{`
+        .react-calendar__tile.highlight {
+          background: #fee2e2 !important;
+          color: #be185d !important;
+          font-weight: bold;
+          border-radius: 999px;
+          box-shadow: 0 0 0 2px #f472b644;
+          transition: background 0.2s;
+        }
+      `}</style>
     </main>
   )
 }

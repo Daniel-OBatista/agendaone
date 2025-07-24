@@ -119,14 +119,16 @@ body {
   border-radius: 50%;
 }
 
-/* Dias com agendamentos */
+/* CSS para destacar datas com agendamento no calendário */
 .react-calendar__tile.highlight {
-  background: #fde68a !important;
-  color: #7c2d12;
+  background: #fee2e2 !important; /* rosa claro */
+  color: #be185d !important;       /* rosa escuro */
   font-weight: bold;
-  border-radius: 50%;
-  position: relative;
+  border-radius: 999px;
+  box-shadow: 0 0 0 2px #f472b644;
+  transition: background 0.2s;
 }
+
 
 .react-calendar__tile.highlight::after {
   content: '•';
@@ -138,3 +140,4 @@ body {
   right: 0;
   text-align: center;
 }
+
