@@ -271,8 +271,8 @@ export default function AgendamentosPage() {
                       </button>
                     </div>
                   )}
-                  <div className="mt-5 text-xs text-pink-700 font-mono select-all w-full">
-                    <span className="inline-block bg-pink-50 border border-pink-300 px-3 py-1 rounded-full">
+                  <div className="hidden">
+                    <span>
                       ID: {a.codigo_atendimento || a.id}
                     </span>
                   </div>
