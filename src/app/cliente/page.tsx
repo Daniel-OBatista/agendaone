@@ -36,7 +36,7 @@ export default function ClientePage() {
             Área do Cliente
           </h1>
           {nome && (
-            <span className="bg-pink-100 text-pink-700 font-semibold px-4 py-1 rounded-full mt-1 text-sm shadow-sm border border-pink-300 animate-bounce-short">
+            <span className="bg-pink-100 text-pink-700 font-semibold px-5 py-1 rounded-full mt-2 text-lg shadow-sm border border-pink-300 animate-bounce-short">
               Olá, {nome}!
             </span>
           )}
