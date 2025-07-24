@@ -33,7 +33,6 @@ export default function ServicosAdminPage() {
   const [erro, setErro] = useState('')
   const [modoEdicao, setModoEdicao] = useState(false)
   const [idEditando, setIdEditando] = useState<string | null>(null)
-  // Removido o filtro de ordenação
   const [filtroBusca, setFiltroBusca] = useState('')
 
   const router = useRouter()
@@ -44,7 +43,7 @@ export default function ServicosAdminPage() {
 
   useEffect(() => {
     fetchServicos()
-  }, []) // Removido [ordenarPor] para buscar só uma vez
+  }, [])
 
   async function verificarAdmin() {
     const { data: userData } = await supabase.auth.getUser()
@@ -68,7 +67,7 @@ export default function ServicosAdminPage() {
     const { data, error } = await supabase
       .from('services')
       .select('*')
-      .order('created_at', { ascending: true }) // Sempre por data de criação
+      .order('created_at', { ascending: true })
 
     if (!error && data) {
       setServicos(data)
@@ -183,7 +182,7 @@ export default function ServicosAdminPage() {
     s.nome.toLowerCase().includes(filtroBusca.toLowerCase())
   )
 
-  // Card sizes
+  // Card sizes (ajustados para mobile no CSS)
   const cardWidth = 420
   const cardHeight = 285
 
@@ -210,7 +209,7 @@ export default function ServicosAdminPage() {
       </button>
 
       <div className="w-full flex justify-center">
-        <h1 className="text-4xl font-extrabold text-pink-700 text-center mb-3 sm:mb-7 tracking-tight relative inline-block leading-tight">
+        <h1 className="text-2xl sm:text-4xl font-extrabold text-pink-700 text-center mb-3 sm:mb-7 tracking-tight relative inline-block leading-tight">
           Gerenciar Serviços
           <span className="block h-1 w-2/3 mx-auto bg-gradient-to-r from-pink-400 to-fuchsia-500 rounded-full mt-2 animate-pulse" />
         </h1>
@@ -294,7 +293,7 @@ export default function ServicosAdminPage() {
         {erro && <p className="text-red-500 text-xs mt-2">{erro}</p>}
       </div>
 
-      {/* Filtro de busca, sem select */}
+      {/* Filtro de busca */}
       <div className="flex flex-col gap-3 justify-between items-center mb-7 max-w-xl mx-auto w-full">
         <input
           type="text"
@@ -335,7 +334,7 @@ export default function ServicosAdminPage() {
                 <div
                   className="bg-white/95 rounded-2xl p-4 sm:p-7 shadow-xl border-2 border-pink-100 mx-auto transition duration-300 swiper-card"
                   style={{
-                    width: '96vw', // Ocupa quase toda a tela no mobile
+                    width: '96vw',
                     maxWidth: '420px',
                     minHeight: `${cardHeight + 70}px`,
                     display: 'flex',
@@ -431,21 +430,24 @@ export default function ServicosAdminPage() {
         }
         @media (max-width: 640px) {
           h1 {
-            font-size: 1.05rem !important;
-            margin-bottom: 1rem !important;
+            font-size: 1.3rem !important;    /* Ajuste aqui para um tamanho intermediário */
+            margin-bottom: 1.2rem !important;
           }
           .bg-white\\/90 {
             margin-left: 0 !important;
             margin-right: 0 !important;
-            width: 99vw !important;
-            max-width: 99vw !important;
+            width: 97vw !important;
+            max-width: 97vw !important;
           }
           .swiper-slide > div {
-            width: 96vw !important;
+            width: 87vw !important;
             min-width: 0 !important;
-            max-width: 99vw !important;
+            max-width: 90vw !important;
             margin-left: 0 !important;
             margin-right: 0 !important;
+          }
+          .swiper-slide img {
+            height: 130px !important;
           }
           .swiper {
             padding-left: 0 !important;
@@ -454,10 +456,11 @@ export default function ServicosAdminPage() {
             margin-right: 0 !important;
           }
           main {
-            padding-left: 0.75rem !important; /* px-3 */
+            padding-left: 0.75rem !important;
             padding-right: 0.75rem !important;
           }
         }
+        
       `}</style>
     </main>
   )
