@@ -217,7 +217,7 @@ export default function ServicosAdminPage() {
         </h1>
       </div>
 
-      <div className="bg-white/90 shadow-2xl rounded-2xl p-4 sm:p-6 mb-6 max-w-xl mx-auto backdrop-blur-lg border-2 border-pink-100">
+      <div className="servicos-form-card bg-white/90 shadow-2xl rounded-2xl p-4 sm:p-6 mb-6 max-w-xl mx-auto backdrop-blur-lg border-2 border-pink-100">
         <div className="flex gap-4 flex-col sm:flex-row">
           <div className="flex-1">
             <input
@@ -442,21 +442,21 @@ export default function ServicosAdminPage() {
           transform: scale(0.97) !important;
         }
         @media (max-width: 640px) {
-          .swiper-slide-prev,
-          .swiper-slide-next {
-            opacity: 0 !important;
-            filter: none !important;
-            pointer-events: none !important;
-            transform: scale(1) !important;
+          .servicos-form-card {
+            padding: 0.8rem 0.7rem !important;
+            max-width: 98vw !important;
+            font-size: 0.98rem !important;
+            margin-bottom: 1.5rem !important;
           }
-          .swiper-decor-arrows {
-            width: 40px !important;
-            height: 40px !important;
+          .servicos-form-card input,
+          .servicos-form-card textarea {
+            font-size: 0.98rem !important;
+            padding: 0.7rem !important;
           }
-          .h-2 {
-            height: 7px !important;
+          .servicos-form-card label {
+            font-size: 0.98rem !important;
           }
-        }
+        }        
         @media (min-width: 641px) {
           .swiper-slide-prev,
           .swiper-slide-next {
