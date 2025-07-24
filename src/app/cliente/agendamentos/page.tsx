@@ -159,30 +159,38 @@ export default function AgendamentosPage() {
     })
 
   return (
-    <main className="min-h-screen bg-gradient-to-br from-pink-50 via-white to-pink-100 flex flex-col items-center py-6 px-2">
-      <div className="w-full max-w-2xl flex flex-col items-center">
-        {/* Header centralizado */}
-        <div className="relative flex items-center mb-6 mt-2 w-full min-h-[40px]">
-          <div className="absolute left-0 top-1/2 -translate-y-1/2">
-            <button
-              onClick={() => router.push('/cliente')}
-              className="flex items-center gap-2 bg-pink-500 text-white px-5 py-2 rounded-full hover:bg-pink-600 text-lg shadow font-semibold"
-            >
-              <Home size={20} /> Início
-            </button>
-          </div>
-          <h1 className="w-full text-4xl font-extrabold text-pink-700 text-center tracking-tight" style={{ letterSpacing: '.01em' }}>
+    <main className="min-h-screen bg-gradient-to-br from-pink-50 via-white to-pink-100 flex flex-col items-center py-4 px-1 sm:py-6 sm:px-2">
+      <div className="w-full max-w-xl sm:max-w-2xl flex flex-col items-center">
+        {/* Header minimalista: casinha, atualizar, centralizado */}
+        <div className="relative flex items-center mb-3 sm:mb-6 mt-1 sm:mt-2 w-full min-h-[36px]">
+          <button
+            onClick={() => router.push('/cliente')}
+            className="absolute left-0 top-1/2 -translate-y-1/2 p-2 rounded-full hover:bg-pink-100 transition"
+            title="Início"
+            aria-label="Início"
+          >
+            <Home size={26} className="text-pink-500" />
+          </button>
+          <h1 className="w-full text-2xl sm:text-4xl font-extrabold text-pink-700 text-center tracking-tight" style={{ letterSpacing: '.01em' }}>
             Meus Agendamentos
           </h1>
+          <button
+            onClick={fetchTudo}
+            className="absolute right-0 top-1/2 -translate-y-1/2 p-2 rounded-full hover:bg-pink-100 transition"
+            title="Atualizar"
+            aria-label="Atualizar"
+          >
+            <RotateCcw size={24} className="text-pink-500" />
+          </button>
         </div>
 
-        {/* Filtros de status, "Agendados" removido */}
-        <div className="w-full mb-5 flex flex-wrap items-center justify-center gap-3">
+        {/* Filtros */}
+        <div className="w-full mb-4 sm:mb-5 flex flex-wrap items-center justify-center gap-2 sm:gap-3">
           {(['proximos', 'all', 'concluído', 'cancelado'] as FiltroStatus[]).map((status) => (
             <button
               key={status}
               onClick={() => setFiltroStatus(status)}
-              className={`px-4 py-1.5 rounded-full font-bold border text-sm shadow-sm transition
+              className={`px-3 py-1 rounded-full font-bold border text-xs sm:px-4 sm:py-1.5 sm:text-sm shadow-sm transition
                 ${
                   filtroStatus === status
                     ? status === 'concluído'
@@ -224,25 +232,25 @@ export default function AgendamentosPage() {
               return (
                 <div
                   key={a.id}
-                  className="relative bg-white/80 border-2 border-pink-200 rounded-3xl shadow-xl p-7 flex flex-col gap-2 backdrop-blur-xl transition-all duration-200"
+                  className="relative bg-white/80 border-2 border-pink-200 rounded-3xl shadow-xl p-4 sm:p-7 flex flex-col gap-2 backdrop-blur-xl transition-all duration-200"
                   style={{
                     boxShadow: '0 8px 40px 0 rgba(232, 121, 249, 0.12), 0 2px 8px 0 rgba(238, 51, 130, 0.03)',
                     background: 'linear-gradient(135deg, #fffafd 80%, #ffe6f6 100%)',
                   }}
                 >
-                  <div className="flex flex-col space-y-4">
-                    <span className="text-zinc-700 text-base"><b>Cliente:</b> {cliente?.nome || '---'}</span>
-                    <span className="text-zinc-700 text-base"><b>Profissional:</b> {colaborador?.nome || '---'}</span>
-                    <span className="text-zinc-700 text-base"><b>Serviço:</b> {servico?.nome || '---'}</span>
+                  <div className="flex flex-col space-y-2 sm:space-y-4">
+                    <span className="text-zinc-700 text-sm sm:text-base"><b>Cliente:</b> {cliente?.nome || '---'}</span>
+                    <span className="text-zinc-700 text-sm sm:text-base"><b>Profissional:</b> {colaborador?.nome || '---'}</span>
+                    <span className="text-zinc-700 text-sm sm:text-base"><b>Serviço:</b> {servico?.nome || '---'}</span>
                   </div>
                   <div className="flex gap-2 items-center mb-1">
-                    <span className="text-zinc-700 font-semibold">Valor:</span>
-                    <span className="text-green-700 text-lg font-bold">
+                    <span className="text-zinc-700 font-semibold text-sm sm:text-base">Valor:</span>
+                    <span className="text-green-700 text-base sm:text-lg font-bold">
                       {servico?.valor != null ? `R$ ${Number(servico.valor).toFixed(2)}` : '--'}
                     </span>
                   </div>
                   <div className="flex gap-3 items-center">
-                    <span className="text-zinc-700 font-medium">Data/Hora:</span>
+                    <span className="text-zinc-700 font-medium text-sm sm:text-base">Data/Hora:</span>
                     <span className="font-bold text-base text-zinc-900">{formatarData(a.data_hora)}</span>
                   </div>
                   {statusBadge(a.status)}
@@ -250,19 +258,18 @@ export default function AgendamentosPage() {
                     <div className="flex gap-3 mt-3">
                       <button
                         onClick={() => cancelarAgendamento(a.id)}
-                        className="flex items-center gap-1 bg-white border border-red-300 text-red-600 hover:bg-red-50 px-4 py-1.5 rounded-md font-medium text-base shadow-sm transition"
+                        className="flex items-center gap-1 bg-white border border-red-300 text-red-600 hover:bg-red-50 px-4 py-1.5 rounded-md font-medium text-sm sm:text-base shadow-sm transition"
                       >
                         <XCircle size={16} /> Cancelar
                       </button>
                       <button
                         onClick={() => reagendar(a.service_id, a.id)}
-                        className="flex items-center gap-1 bg-white border border-blue-300 text-blue-600 hover:bg-blue-50 px-4 py-1.5 rounded-md font-medium text-base shadow-sm transition"
+                        className="flex items-center gap-1 bg-white border border-blue-300 text-blue-600 hover:bg-blue-50 px-4 py-1.5 rounded-md font-medium text-sm sm:text-base shadow-sm transition"
                       >
                         <RotateCcw size={16} /> Reagendar
                       </button>
                     </div>
                   )}
-                  {/* Badge de ID no rodapé do card */}
                   <div className="mt-5 text-xs text-pink-700 font-mono select-all w-full">
                     <span className="inline-block bg-pink-50 border border-pink-300 px-3 py-1 rounded-full">
                       ID: {a.codigo_atendimento || a.id}
