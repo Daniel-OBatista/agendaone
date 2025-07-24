@@ -142,7 +142,7 @@ body {
 
 @media (max-width: 640px) {
   .swiper-card {
-    width: 89vw !important;
+    width: 80vw !important;
     max-width: 92vw !important;
     min-width: 0 !important;
     padding: 0.5rem 0.4rem !important;
