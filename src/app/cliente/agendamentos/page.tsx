@@ -18,11 +18,10 @@ type Servico = { id: string; nome: string; valor?: number }
 type Colaborador = { id: string; nome: string }
 type Cliente = { id: string; nome: string }
 
-type FiltroStatus = 'all' | 'agendado' | 'concluído' | 'cancelado' | 'proximos'
+type FiltroStatus = 'all' | 'concluído' | 'cancelado' | 'proximos'
 
 const statusLabels: Record<FiltroStatus, string> = {
   all: 'Todos',
-  agendado: 'Agendados',
   concluído: 'Concluídos',
   cancelado: 'Cancelados',
   proximos: 'Próximos',
@@ -140,12 +139,6 @@ export default function AgendamentosPage() {
     return null // Não mostra badge "Agendado"
   }
 
-  function CalendarIcon() {
-    return (
-      <svg width="13" height="13" fill="currentColor" className="inline-block mr-0.5" viewBox="0 0 20 20"><path d="M6 2a1 1 0 00-1 1v1H5A3 3 0 002 7v8a3 3 0 003 3h10a3 3 0 003-3V7a3 3 0 00-3-3h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zM5 7h10a1 1 0 011 1v1H4V8a1 1 0 011-1zm-1 4h12v4a1 1 0 01-1 1H5a1 1 0 01-1-1v-4z"></path></svg>
-    )
-  }
-
   // Ordena agendamentos: agendado > concluído > cancelado > data/hora
   const statusOrder = { agendado: 0, concluído: 1, cancelado: 2 } as const
   const getOrder = (status: string) => statusOrder[status as keyof typeof statusOrder] ?? 99
@@ -168,7 +161,7 @@ export default function AgendamentosPage() {
   return (
     <main className="min-h-screen bg-gradient-to-br from-pink-50 via-white to-pink-100 flex flex-col items-center py-6 px-2">
       <div className="w-full max-w-2xl flex flex-col items-center">
-        {/* Header: botão esquerda, título sempre centralizado, responsivo */}
+        {/* Header centralizado */}
         <div className="relative flex items-center mb-6 mt-2 w-full min-h-[40px]">
           <div className="absolute left-0 top-1/2 -translate-y-1/2">
             <button
@@ -183,18 +176,16 @@ export default function AgendamentosPage() {
           </h1>
         </div>
 
-        {/* Filtros de status, todos com mesmo estilo */}
+        {/* Filtros de status, "Agendados" removido */}
         <div className="w-full mb-5 flex flex-wrap items-center justify-center gap-3">
-          {(['proximos', 'all', 'agendado', 'concluído', 'cancelado'] as FiltroStatus[]).map((status) => (
+          {(['proximos', 'all', 'concluído', 'cancelado'] as FiltroStatus[]).map((status) => (
             <button
               key={status}
               onClick={() => setFiltroStatus(status)}
               className={`px-4 py-1.5 rounded-full font-bold border text-sm shadow-sm transition
                 ${
                   filtroStatus === status
-                    ? status === 'agendado'
-                      ? 'bg-pink-500 text-white border-pink-400'
-                      : status === 'concluído'
+                    ? status === 'concluído'
                       ? 'bg-green-500 text-white border-green-400'
                       : status === 'cancelado'
                       ? 'bg-red-500 text-white border-red-400'
