@@ -86,7 +86,7 @@ export default function AgendarClientePage() {
 
     let horariosFiltrados = horarios.filter(h => !ocupados.includes(h))
 
-    // AJUSTE: no dia atual, só mostra horários futuros
+    // No dia atual, só mostra horários futuros
     if (
       dataSelecionada &&
       format(dataSelecionada, 'yyyy-MM-dd') === format(new Date(), 'yyyy-MM-dd')
@@ -191,7 +191,7 @@ export default function AgendarClientePage() {
     setTimeout(() => router.push('/cliente/agendamentos'), 1600)
   }
 
-  // Marca dias disponíveis (pode customizar para só marcar dias realmente disponíveis, se quiser)
+  // Marca dias disponíveis
   const marcarDias = ({ date }: { date: Date }) => {
     const hoje = new Date()
     if (date >= new Date(hoje.getFullYear(), hoje.getMonth(), hoje.getDate())) {
@@ -201,18 +201,22 @@ export default function AgendarClientePage() {
   }
 
   return (
-    <main className="min-h-screen bg-gradient-to-br from-pink-50 to-white text-zinc-800 px-4 py-10 flex justify-center">
-      <div className="bg-white/80 rounded-2xl shadow-xl ring-2 ring-pink-200 max-w-2xl w-full p-8 space-y-6">
-        {/* BOTÃO DE INÍCIO */}
-        <div className="flex items-center justify-between mb-6">
-          <button
-            onClick={() => router.push('/cliente')}
-            className="flex items-center gap-2 text-white bg-pink-500 px-3 py-1.5 rounded-md hover:bg-pink-600 text-sm shadow"
-          >
-            <Home size={18} />
-            Início
-          </button>
-          <h1 className="text-2xl font-bold text-pink-700 text-center w-full">Agendar Serviço</h1>
+    <main className="min-h-screen bg-gradient-to-br from-pink-50 to-white text-zinc-800 px-2 py-8 flex justify-center">
+      <div className="bg-white/80 rounded-2xl shadow-xl ring-2 ring-pink-200 max-w-2xl w-full p-4 sm:p-8 space-y-6">
+        {/* HEADER: casinha à esquerda, título centralizado */}
+        <div className="relative flex items-center mb-4 sm:mb-6 mt-1 w-full min-h-[40px]">
+        <button
+          onClick={() => router.push('/cliente')}
+          className="absolute left-0 top-1/2 -translate-y-1/2 p-2 rounded-full bg-white shadow-lg border-2 border-fuchsia-500 hover:bg-fuchsia-50 transition"
+          title="Início"
+          aria-label="Início"
+        >
+          <Home size={26} className="text-fuchsia-600 drop-shadow-md" />
+        </button>
+        
+          <h1 className="w-full text-2xl sm:text-3xl font-extrabold text-pink-700 text-center tracking-tight" style={{ letterSpacing: '.01em' }}>
+            Agendar Serviço
+          </h1>
         </div>
         
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">

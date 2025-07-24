@@ -163,14 +163,15 @@ export default function AgendamentosPage() {
       <div className="w-full max-w-xl sm:max-w-2xl flex flex-col items-center">
         {/* Header minimalista: casinha, atualizar, centralizado */}
         <div className="relative flex items-center mb-3 sm:mb-6 mt-1 sm:mt-2 w-full min-h-[36px]">
-          <button
-            onClick={() => router.push('/cliente')}
-            className="absolute left-0 top-1/2 -translate-y-1/2 p-2 rounded-full hover:bg-pink-100 transition"
-            title="Início"
-            aria-label="Início"
-          >
-            <Home size={26} className="text-pink-500" />
-          </button>
+        <button
+          onClick={() => router.push('/cliente')}
+          className="absolute left-0 top-1/2 -translate-y-1/2 p-2 rounded-full bg-white shadow-lg border-2 border-fuchsia-500 hover:bg-fuchsia-50 transition"
+          title="Início"
+          aria-label="Início"
+        >
+          <Home size={26} className="text-fuchsia-600 drop-shadow-md" />
+        </button>
+
           <h1 className="w-full text-2xl sm:text-4xl font-extrabold text-pink-700 text-center tracking-tight" style={{ letterSpacing: '.01em' }}>
             Meus Agendamentos
           </h1>
