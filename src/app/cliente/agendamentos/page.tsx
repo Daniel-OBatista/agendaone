@@ -7,7 +7,7 @@ import { Home, RotateCcw, XCircle, CheckCircle } from 'lucide-react'
 
 type AgendamentoUsuario = {
   id: string
-  codigo_atendimento?: string // NOVO CAMPO
+  codigo_atendimento?: string
   data_hora: string
   status: string
   service_id: string
@@ -31,14 +31,12 @@ export default function AgendamentosPage() {
   async function fetchTudo() {
     setCarregando(true)
     setErro('')
-    // Busca usuário logado
     const { data: userData, error: userError } = await supabase.auth.getUser()
     if (userError || !userData.user?.id) {
       setErro('Você precisa estar logado.')
       setCarregando(false)
       return
     }
-    // Busca nome do cliente (opcional, pois é sempre o usuário logado)
     const { data: cli } = await supabase
       .from('users')
       .select('id, nome')
@@ -46,19 +44,16 @@ export default function AgendamentosPage() {
       .single()
     setCliente(cli)
 
-    // Agendamentos (BUSCA O NOVO CAMPO!)
     const { data: ags, error: errA } = await supabase
       .from('appointments')
       .select('id, codigo_atendimento, data_hora, status, service_id, operador_id')
       .eq('user_id', userData.user.id)
       .order('data_hora', { ascending: true })
 
-    // Serviços
     const { data: svcs, error: errS } = await supabase
       .from('services')
       .select('id, nome, valor')
 
-    // Colaboradores
     const { data: cols, error: errC } = await supabase
       .from('operadores')
       .select('id, nome')
@@ -121,18 +116,18 @@ export default function AgendamentosPage() {
   function statusBadge(status: string) {
     if (status === 'cancelado')
       return (
-        <span className="inline-flex items-center gap-1 bg-white/60 border border-red-200 text-red-500 px-2 py-0.5 rounded-full text-xs font-medium shadow-sm">
-          <XCircle size={13} /> Cancelado
+        <span className="inline-flex items-center gap-1 bg-red-100 border border-red-300 text-red-600 px-3 py-1 rounded-full text-xs font-bold">
+          <XCircle size={15} /> Cancelado
         </span>
       )
     if (status === 'concluído')
       return (
-        <span className="inline-flex items-center gap-1 bg-white/60 border border-green-200 text-green-600 px-2 py-0.5 rounded-full text-xs font-medium shadow-sm">
-          <CheckCircle size={13} /> Concluído
+        <span className="inline-flex items-center gap-1 bg-green-100 border border-green-300 text-green-700 px-3 py-1 rounded-full text-xs font-bold">
+          <CheckCircle size={15} /> Concluído
         </span>
       )
     return (
-      <span className="inline-flex items-center gap-1 bg-white/60 border border-gray-200 text-gray-600 px-2 py-0.5 rounded-full text-xs font-medium shadow-sm">
+      <span className="inline-flex items-center gap-1 bg-pink-100 border border-pink-300 text-pink-700 px-3 py-1 rounded-full text-xs font-bold">
         <CalendarIcon /> Agendado
       </span>
     )
@@ -145,23 +140,23 @@ export default function AgendamentosPage() {
   }
 
   return (
-    <main className="min-h-screen bg-gradient-to-br from-pink-50 to-white flex justify-center items-center px-2">
-      <div className="w-full max-w-6xl flex flex-col gap-6">
-        <div className="flex items-center justify-between mb-1">
+    <main className="min-h-screen bg-gradient-to-br from-pink-50 via-white to-pink-100 flex flex-col items-center py-6 px-2">
+      <div className="w-full max-w-2xl flex flex-col items-center">
+        {/* Menor espaço entre botão/título */}
+        <div className="flex flex-col sm:flex-row items-center gap-1 mb-6 mt-2 w-full justify-between">
           <button
             onClick={() => router.push('/cliente')}
-            className="flex items-center gap-2 text-white bg-pink-500 px-3 py-1.5 rounded-lg hover:bg-pink-600 text-sm shadow"
+            className="flex items-center gap-2 bg-pink-500 text-white px-5 py-2 rounded-full hover:bg-pink-600 text-lg shadow font-semibold"
           >
-            <Home size={18} />
-            Início
+            <Home size={20} /> Início
           </button>
-          <h1 className="text-2xl font-bold text-pink-700 text-center w-full">
+          <h1 className="text-4xl font-extrabold text-pink-700 text-center tracking-tight" style={{ letterSpacing: '.01em' }}>
             Meus Agendamentos
           </h1>
         </div>
 
         {sucesso && (
-          <div className="bg-green-100 text-green-800 border border-green-200 px-4 py-2 rounded-xl mb-2 text-sm text-center shadow animate-fade-in-down">
+          <div className="bg-green-100 text-green-800 border border-green-200 px-4 py-2 rounded-xl mb-2 text-base text-center shadow animate-fade-in-down w-full max-w-md">
             {sucesso}
           </div>
         )}
@@ -175,122 +170,64 @@ export default function AgendamentosPage() {
             Você ainda não tem agendamentos.
           </div>
         ) : (
-          // TABLE DESKTOP
-          <div className="overflow-x-auto hidden md:block rounded-2xl">
-            <table className="w-full rounded-2xl overflow-hidden bg-white/60 backdrop-blur-lg shadow-xl border border-gray-100">
-              <thead>
-                <tr className="text-left text-zinc-700 text-sm uppercase bg-white/80">
-                  <th className="px-5 py-3">Cliente</th>
-                  <th className="px-5 py-3">Operador</th>
-                  <th className="px-5 py-3">Serviço</th>
-                  <th className="px-5 py-3">Valor</th>
-                  <th className="px-5 py-3">Status</th>
-                  <th className="px-5 py-3">Data/Hora</th>
-                  <th className="px-5 py-3">ID Atendimento</th> {/* ALTERADO */}
-                  <th className="px-5 py-3"></th>
-                </tr>
-              </thead>
-              <tbody>
-                {agendamentos.map((a, idx) => {
-                  const servico = servicos.find(s => s.id === a.service_id)
-                  const colaborador = colaboradores.find(c => c.id === a.operador_id)
-                  const podeAlterar = a.status === 'agendado' && new Date(a.data_hora) > new Date()
-
-                  return (
-                    <tr
-                      key={a.id}
-                      className={`text-base text-zinc-800 ${
-                        idx % 2 === 0 ? 'bg-white/60' : 'bg-pink-50/50'
-                      } border-b last:border-none`}
-                    >
-                      <td className="px-5 py-3">{cliente?.nome || '---'}</td>
-                      <td className="px-5 py-3">{colaborador?.nome || '---'}</td>
-                      <td className="px-5 py-3">{servico?.nome || '---'}</td>
-                      <td className="px-5 py-3">
-                        {servico?.valor != null ? `R$ ${Number(servico.valor).toFixed(2)}` : '--'}
-                      </td>
-                      <td className="px-5 py-3">{statusBadge(a.status)}</td>
-                      <td className="px-5 py-3">{formatarData(a.data_hora)}</td>
-                      <td className="px-5 py-3 font-mono text-xs text-zinc-500">
-                        {a.codigo_atendimento || a.id}
-                      </td>
-                      <td className="px-5 py-3">
-                        {podeAlterar && (
-                          <div className="flex gap-2">
-                            <button
-                              onClick={() => cancelarAgendamento(a.id)}
-                              className="flex items-center gap-1 bg-white/80 border border-gray-200 text-red-500 hover:bg-red-50 px-3 py-1 rounded-md font-medium text-xs shadow-sm transition"
-                            >
-                              <XCircle size={15} /> Cancelar
-                            </button>
-                            <button
-                              onClick={() => reagendar(a.service_id, a.id)}
-                              className="flex items-center gap-1 bg-white/80 border border-gray-200 text-blue-600 hover:bg-blue-50 px-3 py-1 rounded-md font-medium text-xs shadow-sm transition"
-                            >
-                              <RotateCcw size={15} /> Reagendar
-                            </button>
-                          </div>
-                        )}
-                      </td>
-                    </tr>
-                  )
-                })}
-              </tbody>
-            </table>
-          </div>
-        )}
-
-        {/* MOBILE CARDS */}
-        {!carregando && !erro && agendamentos.length > 0 && (
-          <ul className="md:hidden flex flex-col gap-5">
+          <div className="flex flex-col gap-7 w-full">
             {agendamentos.map((a) => {
               const servico = servicos.find(s => s.id === a.service_id)
               const colaborador = colaboradores.find(c => c.id === a.operador_id)
               const podeAlterar = a.status === 'agendado' && new Date(a.data_hora) > new Date()
               return (
-                <li
+                <div
                   key={a.id}
-                  className="backdrop-blur-lg bg-white/70 border border-gray-100 rounded-xl shadow p-4 flex flex-col gap-2"
-                  style={{ boxShadow: "0 1px 12px 0 rgba(232, 121, 249, 0.09)" }}>
-                  <div className="flex flex-wrap gap-1 items-center text-sm font-medium">
-                    <span className="text-zinc-700"><b>Cliente:</b> {cliente?.nome || '---'}</span>
-                    <span className="text-zinc-700"><b>Operador:</b> {colaborador?.nome || '---'}</span>
-                    <span className="text-zinc-700"><b>Serviço:</b> {servico?.nome || '---'}</span>
+                  className="relative bg-white/80 border-2 border-pink-200 rounded-3xl shadow-xl p-7 flex flex-col gap-2 backdrop-blur-xl transition-all duration-200"
+                  style={{
+                    boxShadow: '0 8px 40px 0 rgba(232, 121, 249, 0.12), 0 2px 8px 0 rgba(238, 51, 130, 0.03)',
+                    background: 'linear-gradient(135deg, #fffafd 80%, #ffe6f6 100%)',
+                  }}
+                >
+                  <div className="flex flex-col space-y-4">
+                    <span className="text-zinc-700 text-base"><b>Cliente:</b> {cliente?.nome || '---'}</span>
+                    <span className="text-zinc-700 text-base"><b>Operador:</b> {colaborador?.nome || '---'}</span>
+                    <span className="text-zinc-700 text-base"><b>Serviço:</b> {servico?.nome || '---'}</span>
                   </div>
-                  <div className="flex flex-wrap gap-1 items-center text-sm">
-                    <span className="text-zinc-600"><b>Valor:</b> {servico?.valor != null ? `R$ ${Number(servico.valor).toFixed(2)}` : '--'}</span>
-                    <span className="text-zinc-600"><b>Status:</b> {statusBadge(a.status)}</span>
+                  <div className="flex gap-2 items-center mb-1">
+                    <span className="text-zinc-600 font-semibold">Valor:</span>
+                    <span className="text-green-600 text-lg font-bold">
+                      {servico?.valor != null ? `R$ ${Number(servico.valor).toFixed(2)}` : '--'}
+                    </span>
                   </div>
-                  <div className="text-zinc-600 text-sm">
-                    <b>Data/Hora:</b> {formatarData(a.data_hora)}
-                  </div>
-                  <div className="text-xs text-gray-400 select-all">
-                    <b>ID Atendimento:</b> <span className="font-mono">{a.codigo_atendimento || a.id}</span>
+                  <div className="flex gap-3 items-center">
+                    <span className="text-zinc-700 font-medium">Data/Hora:</span>
+                    <span className="font-bold text-base text-zinc-900">{formatarData(a.data_hora)}</span>
+                    {statusBadge(a.status)}
                   </div>
                   {podeAlterar && (
-                    <div className="flex gap-2 mt-1">
+                    <div className="flex gap-3 mt-3">
                       <button
                         onClick={() => cancelarAgendamento(a.id)}
-                        className="flex items-center gap-1 bg-white/70 border border-gray-200 text-red-500 hover:bg-red-50 px-3 py-1 rounded-md font-medium text-xs shadow-sm transition"
+                        className="flex items-center gap-1 bg-white border border-red-300 text-red-600 hover:bg-red-50 px-4 py-1.5 rounded-md font-medium text-base shadow-sm transition"
                       >
-                        <XCircle size={15} /> Cancelar
+                        <XCircle size={16} /> Cancelar
                       </button>
                       <button
                         onClick={() => reagendar(a.service_id, a.id)}
-                        className="flex items-center gap-1 bg-white/70 border border-gray-200 text-blue-600 hover:bg-blue-50 px-3 py-1 rounded-md font-medium text-xs shadow-sm transition"
+                        className="flex items-center gap-1 bg-white border border-blue-300 text-blue-600 hover:bg-blue-50 px-4 py-1.5 rounded-md font-medium text-base shadow-sm transition"
                       >
-                        <RotateCcw size={15} /> Reagendar
+                        <RotateCcw size={16} /> Reagendar
                       </button>
                     </div>
                   )}
-                </li>
+                  {/* Badge de ID no rodapé do card */}
+                  <div className="mt-5 text-xs text-pink-700 font-mono select-all w-full">
+                    <span className="inline-block bg-pink-50 border border-pink-300 px-3 py-1 rounded-full">
+                      ID: {a.codigo_atendimento || a.id}
+                    </span>
+                  </div>
+                </div>
               )
             })}
-          </ul>
+          </div>
         )}
-
       </div>
-      {/* Fade-in animação */}
       <style jsx global>{`
         .animate-fade-in {
           animation: fadeIn 0.8s cubic-bezier(.48,1.62,.44,.91) both;
