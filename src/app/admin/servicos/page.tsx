@@ -1,9 +1,9 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase } from '../../lib/supabaseClient'
-import { Home, RotateCcw } from 'lucide-react'
+import { Home, RotateCcw, ChevronLeft, ChevronRight } from 'lucide-react'
 import ImageCropper from '../../../../utils/ImageCropper'
 import { Swiper, SwiperSlide } from 'swiper/react'
 import { Pagination, EffectCoverflow } from 'swiper/modules'
@@ -12,6 +12,7 @@ import 'swiper/css/pagination'
 import 'swiper/css/effect-coverflow'
 
 export default function ServicosAdminPage() {
+  // Tipos
   type Servico = {
     id: string
     nome: string
@@ -22,6 +23,7 @@ export default function ServicosAdminPage() {
     created_at?: string
   }
 
+  // Estados
   const [servicos, setServicos] = useState<Servico[]>([])
   const [nome, setNome] = useState('')
   const [descricao, setDescricao] = useState('')
@@ -36,9 +38,11 @@ export default function ServicosAdminPage() {
   const [filtroBusca, setFiltroBusca] = useState('')
 
   const router = useRouter()
+  const swiperRef = useRef<any>(null) // Referência para Swiper
 
   useEffect(() => {
     verificarAdmin()
+    // eslint-disable-next-line
   }, [router])
 
   useEffect(() => {
@@ -182,9 +186,7 @@ export default function ServicosAdminPage() {
     s.nome.toLowerCase().includes(filtroBusca.toLowerCase())
   )
 
-  // Card sizes (ajustados para mobile no CSS)
-  const cardWidth = 420
-  const cardHeight = 285
+  const cardHeight = 325
 
   return (
     <main className="min-h-screen bg-gradient-to-br from-pink-50 via-white to-fuchsia-100 text-zinc-800 px-3 sm:px-8 md:px-16 py-8 relative overflow-hidden">
@@ -305,78 +307,106 @@ export default function ServicosAdminPage() {
         />
       </div>
 
-      {/* CARROSSEL SWIPER */}
-      <div className="w-full flex flex-col items-center">
-        <div className="w-full flex justify-center px-0">
-          <Swiper
-            modules={[Pagination, EffectCoverflow]}
-            effect="coverflow"
-            grabCursor
-            centeredSlides
-            slidesPerView={1.08}
-            pagination={{ clickable: true }}
-            speed={700}
-            coverflowEffect={{
-              rotate: 0,
-              stretch: 0,
-              depth: 100,
-              modifier: 3.5,
-              slideShadows: false,
-            }}
-            className="w-full"
-            style={{
-              paddingBottom: '58px',
-              margin: 0,
-            }}
-          >
-            {servicosFiltrados.map((s) => (
-              <SwiperSlide key={s.id}>
-                <div
-                  className="bg-white/95 rounded-2xl p-4 sm:p-7 shadow-xl border-2 border-pink-100 mx-auto transition duration-300 swiper-card"
-                  style={{
-                    width: '96vw',
-                    maxWidth: '420px',
-                    minHeight: `${cardHeight + 70}px`,
-                    display: 'flex',
-                    flexDirection: 'column',
-                    alignItems: 'flex-start',
-                    margin: '0 auto'
-                  }}
-                >
-                  {s.imagem_url && (
-                    <img
-                      src={s.imagem_url}
-                      alt={s.nome}
-                      className="w-full h-[252px] object-cover rounded-xl mb-2 bg-zinc-100"
-                    />
-                  )}
-                  <div className="w-full flex flex-col items-start px-1">
-                    <p className="font-bold text-pink-700 text-lg">{s.nome}</p>
-                    <p className="text-sm text-zinc-800 min-h-[32px]">{s.descricao}</p>
-                    <div className="flex gap-2 flex-wrap mt-2">
-                      <span className="text-xs text-green-700 font-bold">R$ {Number(s.valor).toFixed(2)}</span>
-                      <span className="text-xs text-blue-700 font-semibold">⏱ {s.duracao} min</span>
-                    </div>
-                    <div className="flex gap-2 mt-3">
-                      <button
-                        onClick={() => editarServico(s)}
-                        className="bg-blue-500 text-white px-4 py-1.5 rounded-lg font-semibold hover:bg-blue-700 transition text-xs shadow"
-                      >
-                        EDITAR
-                      </button>
-                      <button
-                        onClick={() => excluirServico(s.id)}
-                        className="bg-red-500 text-white px-4 py-1.5 rounded-lg font-semibold hover:bg-red-700 transition text-xs shadow"
-                      >
-                        EXCLUIR
-                      </button>
-                    </div>
+      {/* Carrossel */}
+      <div className="w-full flex flex-col items-center mt-8">
+        {/* Setas + Linha decorativa */}
+        <div className="w-full flex flex-col items-center mb-0 relative z-10 select-none">
+          <div className="flex justify-center items-center gap-4 w-full max-w-[600px] mx-auto pb-2">
+            <button
+              className="swiper-decor-arrows flex items-center justify-center rounded-full hover:bg-fuchsia-100 transition md:scale-110 scale-90 active:scale-100 shadow-md"
+              style={{ width: 48, height: 48 }}
+              onClick={() => swiperRef.current?.swiper?.slidePrev?.()}
+              aria-label="Anterior"
+              type="button"
+            >
+              <ChevronLeft className="w-9 h-9 text-fuchsia-500" />
+            </button>
+            <div className="h-2 w-44 sm:w-72 bg-gradient-to-r from-pink-400 to-fuchsia-500 rounded-full shadow-pink-200 shadow-md border-2 border-pink-300 opacity-90" />
+            <button
+              className="swiper-decor-arrows flex items-center justify-center rounded-full hover:bg-fuchsia-100 transition md:scale-110 scale-90 active:scale-100 shadow-md"
+              style={{ width: 48, height: 48 }}
+              onClick={() => swiperRef.current?.swiper?.slideNext?.()}
+              aria-label="Próximo"
+              type="button"
+            >
+              <ChevronRight className="w-9 h-9 text-fuchsia-500" />
+            </button>
+          </div>
+        </div>
+
+        <Swiper
+          ref={swiperRef}
+          modules={[Pagination, EffectCoverflow]}
+          effect="coverflow"
+          grabCursor
+          centeredSlides
+          slidesPerView={1.14}
+          pagination={{ clickable: true }}
+          speed={700}
+          coverflowEffect={{
+            rotate: 0,
+            stretch: 0,
+            depth: 80,
+            modifier: 1.9,
+            slideShadows: false,
+          }}
+          className="w-full max-w-[680px] md:mt-2"
+          style={{
+            paddingBottom: '58px',
+          }}
+          breakpoints={{
+            0:   { slidesPerView: 1.06 },
+            600: { slidesPerView: 1.16 },
+            900: { slidesPerView: 1.4 }
+          }}
+        >
+          {servicosFiltrados.map((s) => (
+            <SwiperSlide key={s.id}>
+              <div
+                className="swiper-card bg-white/95 rounded-2xl p-4 sm:p-7 shadow-xl border-2 border-pink-100 mx-auto transition duration-300"
+                style={{
+                  width: '98vw',
+                  maxWidth: '520px',
+                  minHeight: `${cardHeight + 70}px`,
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'flex-start',
+                  margin: '0 auto'
+                }}
+              >
+                {s.imagem_url && (
+                  <img
+                    src={s.imagem_url}
+                    alt={s.nome}
+                    className="w-full h-[252px] object-cover rounded-xl mb-2 bg-zinc-100"
+                  />
+                )}
+                <div className="w-full flex flex-col items-start px-1">
+                  <p className="font-bold text-pink-700 text-lg">{s.nome}</p>
+                  <p className="text-sm text-zinc-800 min-h-[32px]">{s.descricao}</p>
+                  <div className="flex gap-2 flex-wrap mt-2">
+                    <span className="text-xs text-green-700 font-bold">R$ {Number(s.valor).toFixed(2)}</span>
+                    <span className="text-xs text-blue-700 font-semibold">⏱ {s.duracao} min</span>
+                  </div>
+                  <div className="flex gap-2 mt-3">
+                    <button
+                      onClick={() => editarServico(s)}
+                      className="bg-blue-500 text-white px-4 py-1.5 rounded-lg font-semibold hover:bg-blue-700 transition text-xs shadow"
+                    >
+                      EDITAR
+                    </button>
+                    <button
+                      onClick={() => excluirServico(s.id)}
+                      className="bg-red-500 text-white px-4 py-1.5 rounded-lg font-semibold hover:bg-red-700 transition text-xs shadow"
+                    >
+                      EXCLUIR
+                    </button>
                   </div>
                 </div>
-              </SwiperSlide>
-            ))}
-          </Swiper>
-        </div>
+              </div>
+            </SwiperSlide>
+          ))}
+        </Swiper>
       </div>
 
       {/* Botão atualizar canto inferior direito */}
@@ -386,10 +416,56 @@ export default function ServicosAdminPage() {
         title="Atualizar lista de serviços"
         aria-label="Atualizar"
       >
-        <RotateCcw size={28} />
+        <RotateCcw size={22} />
       </button>
 
       <style jsx global>{`
+        .swiper-slide {
+          transition: opacity 0.4s, filter 0.4s, transform 0.45s !important;
+          opacity: 1 !important;
+          filter: none !important;
+          pointer-events: none;
+        }
+        .swiper-slide.swiper-slide-active {
+          opacity: 1 !important;
+          filter: none !important;
+          pointer-events: auto;
+          z-index: 2;
+          transform: scale(1.07) !important;
+        }
+        .swiper-slide-prev,
+        .swiper-slide-next {
+          opacity: 0.32 !important;
+          filter: blur(2.5px) grayscale(100%) !important;
+          pointer-events: none !important;
+          z-index: 1;
+          transform: scale(0.97) !important;
+        }
+        @media (max-width: 640px) {
+          .swiper-slide-prev,
+          .swiper-slide-next {
+            opacity: 0 !important;
+            filter: none !important;
+            pointer-events: none !important;
+            transform: scale(1) !important;
+          }
+          .swiper-decor-arrows {
+            width: 40px !important;
+            height: 40px !important;
+          }
+          .h-2 {
+            height: 7px !important;
+          }
+        }
+        @media (min-width: 641px) {
+          .swiper-slide-prev,
+          .swiper-slide-next {
+            opacity: 0.32 !important;
+            filter: blur(2.5px) grayscale(100%) !important;
+            pointer-events: none !important;
+            transform: scale(0.97) !important;
+          }
+        }
         .swiper-pagination {
           position: absolute !important;
           bottom: 38px !important;
@@ -407,60 +483,6 @@ export default function ServicosAdminPage() {
           opacity: 1;
           box-shadow: 0 2px 8px #7c3aed50;
         }
-        .swiper-slide {
-          opacity: 1 !important;
-          filter: none !important;
-          pointer-events: none;
-          transition: opacity .35s, transform .45s, filter .35s;
-        }
-        .swiper-slide.swiper-slide-active {
-          opacity: 1 !important;
-          filter: none !important;
-          pointer-events: auto;
-          z-index: 2;
-          transform: scale(1.1) !important;
-        }
-        .swiper-slide-prev,
-        .swiper-slide-next {
-          opacity: 0.48 !important;
-          filter: blur(1.5px) !important;
-          pointer-events: none;
-          z-index: 1;
-          transform: scale(1) !important;
-        }
-        @media (max-width: 640px) {
-          h1 {
-            font-size: 1.3rem !important;    /* Ajuste aqui para um tamanho intermediário */
-            margin-bottom: 1.2rem !important;
-          }
-          .bg-white\\/90 {
-            margin-left: 0 !important;
-            margin-right: 0 !important;
-            width: 97vw !important;
-            max-width: 97vw !important;
-          }
-          .swiper-slide > div {
-            width: 87vw !important;
-            min-width: 0 !important;
-            max-width: 90vw !important;
-            margin-left: 0 !important;
-            margin-right: 0 !important;
-          }
-          .swiper-slide img {
-            height: 130px !important;
-          }
-          .swiper {
-            padding-left: 0 !important;
-            padding-right: 0 !important;
-            margin-left: 0 !important;
-            margin-right: 0 !important;
-          }
-          main {
-            padding-left: 0.75rem !important;
-            padding-right: 0.75rem !important;
-          }
-        }
-        
       `}</style>
     </main>
   )
