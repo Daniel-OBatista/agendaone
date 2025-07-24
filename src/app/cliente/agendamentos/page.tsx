@@ -18,6 +18,16 @@ type Servico = { id: string; nome: string; valor?: number }
 type Colaborador = { id: string; nome: string }
 type Cliente = { id: string; nome: string }
 
+type FiltroStatus = 'all' | 'agendado' | 'concluído' | 'cancelado' | 'proximos'
+
+const statusLabels: Record<FiltroStatus, string> = {
+  all: 'Todos',
+  agendado: 'Agendados',
+  concluído: 'Concluídos',
+  cancelado: 'Cancelados',
+  proximos: 'Próximos',
+}
+
 export default function AgendamentosPage() {
   const [agendamentos, setAgendamentos] = useState<AgendamentoUsuario[]>([])
   const [servicos, setServicos] = useState<Servico[]>([])
@@ -26,6 +36,7 @@ export default function AgendamentosPage() {
   const [erro, setErro] = useState('')
   const [sucesso, setSucesso] = useState('')
   const [carregando, setCarregando] = useState(true)
+  const [filtroStatus, setFiltroStatus] = useState<FiltroStatus>('proximos')
   const router = useRouter()
 
   async function fetchTudo() {
@@ -126,11 +137,7 @@ export default function AgendamentosPage() {
           <CheckCircle size={15} /> Concluído
         </span>
       )
-    return (
-      <span className="inline-flex items-center gap-1 bg-pink-100 border border-pink-300 text-pink-700 px-3 py-1 rounded-full text-xs font-bold">
-        <CalendarIcon /> Agendado
-      </span>
-    )
+    return null // Não mostra badge "Agendado"
   }
 
   function CalendarIcon() {
@@ -139,20 +146,68 @@ export default function AgendamentosPage() {
     )
   }
 
+  // Ordena agendamentos: agendado > concluído > cancelado > data/hora
+  const statusOrder = { agendado: 0, concluído: 1, cancelado: 2 } as const
+  const getOrder = (status: string) => statusOrder[status as keyof typeof statusOrder] ?? 99
+
+  // Filtro de status
+  const agendamentosFiltrados = agendamentos
+    .filter(a => {
+      if (filtroStatus === 'all') return true
+      if (filtroStatus === 'proximos') {
+        return a.status === 'agendado' && new Date(a.data_hora) >= new Date()
+      }
+      return a.status === filtroStatus
+    })
+    .sort((a, b) => {
+      const statusDiff = getOrder(a.status) - getOrder(b.status)
+      if (statusDiff !== 0) return statusDiff
+      return new Date(a.data_hora).getTime() - new Date(b.data_hora).getTime()
+    })
+
   return (
     <main className="min-h-screen bg-gradient-to-br from-pink-50 via-white to-pink-100 flex flex-col items-center py-6 px-2">
       <div className="w-full max-w-2xl flex flex-col items-center">
-        {/* Menor espaço entre botão/título */}
-        <div className="flex flex-col sm:flex-row items-center gap-1 mb-6 mt-2 w-full justify-between">
-          <button
-            onClick={() => router.push('/cliente')}
-            className="flex items-center gap-2 bg-pink-500 text-white px-5 py-2 rounded-full hover:bg-pink-600 text-lg shadow font-semibold"
-          >
-            <Home size={20} /> Início
-          </button>
-          <h1 className="text-4xl font-extrabold text-pink-700 text-center tracking-tight" style={{ letterSpacing: '.01em' }}>
+        {/* Header: botão esquerda, título sempre centralizado, responsivo */}
+        <div className="relative flex items-center mb-6 mt-2 w-full min-h-[40px]">
+          <div className="absolute left-0 top-1/2 -translate-y-1/2">
+            <button
+              onClick={() => router.push('/cliente')}
+              className="flex items-center gap-2 bg-pink-500 text-white px-5 py-2 rounded-full hover:bg-pink-600 text-lg shadow font-semibold"
+            >
+              <Home size={20} /> Início
+            </button>
+          </div>
+          <h1 className="w-full text-4xl font-extrabold text-pink-700 text-center tracking-tight" style={{ letterSpacing: '.01em' }}>
             Meus Agendamentos
           </h1>
+        </div>
+
+        {/* Filtros de status, todos com mesmo estilo */}
+        <div className="w-full mb-5 flex flex-wrap items-center justify-center gap-3">
+          {(['proximos', 'all', 'agendado', 'concluído', 'cancelado'] as FiltroStatus[]).map((status) => (
+            <button
+              key={status}
+              onClick={() => setFiltroStatus(status)}
+              className={`px-4 py-1.5 rounded-full font-bold border text-sm shadow-sm transition
+                ${
+                  filtroStatus === status
+                    ? status === 'agendado'
+                      ? 'bg-pink-500 text-white border-pink-400'
+                      : status === 'concluído'
+                      ? 'bg-green-500 text-white border-green-400'
+                      : status === 'cancelado'
+                      ? 'bg-red-500 text-white border-red-400'
+                      : status === 'proximos'
+                      ? 'bg-fuchsia-600 text-white border-fuchsia-400'
+                      : 'bg-zinc-300 text-zinc-800 border-zinc-300'
+                    : 'bg-white text-zinc-700 border-zinc-200 hover:bg-pink-50'
+                }
+              `}
+            >
+              {statusLabels[status]}
+            </button>
+          ))}
         </div>
 
         {sucesso && (
@@ -165,13 +220,13 @@ export default function AgendamentosPage() {
           <div className="w-full text-center text-zinc-500 py-8">Carregando...</div>
         ) : erro ? (
           <div className="text-red-500 text-center">{erro}</div>
-        ) : agendamentos.length === 0 ? (
+        ) : agendamentosFiltrados.length === 0 ? (
           <div className="text-zinc-600 text-center text-lg py-8">
-            Você ainda não tem agendamentos.
+            Nenhum agendamento encontrado.
           </div>
         ) : (
           <div className="flex flex-col gap-7 w-full">
-            {agendamentos.map((a) => {
+            {agendamentosFiltrados.map((a) => {
               const servico = servicos.find(s => s.id === a.service_id)
               const colaborador = colaboradores.find(c => c.id === a.operador_id)
               const podeAlterar = a.status === 'agendado' && new Date(a.data_hora) > new Date()
@@ -186,20 +241,20 @@ export default function AgendamentosPage() {
                 >
                   <div className="flex flex-col space-y-4">
                     <span className="text-zinc-700 text-base"><b>Cliente:</b> {cliente?.nome || '---'}</span>
-                    <span className="text-zinc-700 text-base"><b>Operador:</b> {colaborador?.nome || '---'}</span>
+                    <span className="text-zinc-700 text-base"><b>Profissional:</b> {colaborador?.nome || '---'}</span>
                     <span className="text-zinc-700 text-base"><b>Serviço:</b> {servico?.nome || '---'}</span>
                   </div>
                   <div className="flex gap-2 items-center mb-1">
-                    <span className="text-zinc-600 font-semibold">Valor:</span>
-                    <span className="text-green-600 text-lg font-bold">
+                    <span className="text-zinc-700 font-semibold">Valor:</span>
+                    <span className="text-green-700 text-lg font-bold">
                       {servico?.valor != null ? `R$ ${Number(servico.valor).toFixed(2)}` : '--'}
                     </span>
                   </div>
                   <div className="flex gap-3 items-center">
                     <span className="text-zinc-700 font-medium">Data/Hora:</span>
                     <span className="font-bold text-base text-zinc-900">{formatarData(a.data_hora)}</span>
-                    {statusBadge(a.status)}
                   </div>
+                  {statusBadge(a.status)}
                   {podeAlterar && (
                     <div className="flex gap-3 mt-3">
                       <button
