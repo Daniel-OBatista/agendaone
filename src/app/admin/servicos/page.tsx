@@ -389,7 +389,7 @@ export default function ServicosAdminPage() {
                     <span className="text-xs text-green-700 font-bold">R$ {Number(s.valor).toFixed(2)}</span>
                     <span className="text-xs text-blue-700 font-semibold">⏱ {s.duracao} min</span>
                   </div>
-                  <div className="flex gap-2 mt-3">
+                  <div className="flex gap-2 mt-3 mb-3">
                     <button
                       onClick={() => editarServico(s)}
                       className="bg-blue-500 text-white px-4 py-1.5 rounded-lg font-semibold hover:bg-blue-700 transition text-xs shadow"
