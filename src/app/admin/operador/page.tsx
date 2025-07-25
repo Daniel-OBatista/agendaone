@@ -1,9 +1,9 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import { supabase } from '../../lib/supabaseClient'
 import { useRouter } from 'next/navigation'
-import { Home, Search, RotateCcw } from 'lucide-react'
+import { Home, RotateCcw, ChevronLeft, ChevronRight } from 'lucide-react'
 import ImageCropper from '../../../../utils/ImageCropper'
 import { Swiper, SwiperSlide } from 'swiper/react'
 import { Pagination, EffectCoverflow } from 'swiper/modules'
@@ -40,10 +40,11 @@ export default function OperadoresAdminPage() {
   const [idEditando, setIdEditando] = useState<string | null>(null)
   const [filtroBusca, setFiltroBusca] = useState('')
   const [imagemParaRecorte, setImagemParaRecorte] = useState<string | null>(null)
+  const [activeIndex, setActiveIndex] = useState(0)
+  const swiperRef = useRef<any>(null)
 
   useEffect(() => {
     verificarAdmin()
-    // eslint-disable-next-line
   }, [])
 
   async function verificarAdmin() {
@@ -171,12 +172,10 @@ export default function OperadoresAdminPage() {
     setImagemParaRecorte(null)
   }
 
-  // Card sizes
-  const cardWidth = 420
-  const cardHeight = 285
+  const cardHeight = 325
 
   return (
-    <main className="min-h-screen bg-gradient-to-br from-pink-50 via-white to-fuchsia-100 text-zinc-800 px-4 sm:px-8 md:px-16 py-10 relative overflow-hidden">
+    <main className="min-h-screen bg-gradient-to-br from-pink-50 via-white to-fuchsia-100 text-zinc-800 px-3 sm:px-8 md:px-16 py-8 relative overflow-hidden">
       <div className="absolute -top-32 left-1/2 -translate-x-1/2 w-[800px] h-[500px] bg-pink-200 opacity-30 rounded-full blur-3xl pointer-events-none" />
       <div className="absolute bottom-0 right-0 w-80 h-80 bg-fuchsia-200 opacity-25 rounded-full blur-2xl pointer-events-none" />
 
@@ -204,17 +203,17 @@ export default function OperadoresAdminPage() {
         title="Atualizar lista de operadores"
         aria-label="Atualizar"
       >
-        <RotateCcw size={28} />
+        <RotateCcw size={22} />
       </button>
 
       <div className="w-full flex justify-center">
-        <h1 className="text-3xl font-extrabold text-pink-700 text-center mb-7 tracking-tight relative inline-block">
+        <h1 className="text-2xl sm:text-4xl font-extrabold text-pink-700 text-center mb-3 sm:mb-7 tracking-tight relative inline-block leading-tight">
           Gerenciar Profissional
           <span className="block h-1 w-2/3 mx-auto bg-gradient-to-r from-pink-400 to-fuchsia-500 rounded-full mt-2 animate-pulse" />
         </h1>
       </div>
 
-      <div className="bg-white/90 shadow-2xl rounded-2xl p-6 mb-7 max-w-xl mx-auto backdrop-blur-lg border-2 border-pink-100">
+      <div className="servicos-form-card bg-white/90 shadow-2xl rounded-2xl p-4 sm:p-6 mb-6 max-w-xl mx-auto backdrop-blur-lg border-2 border-pink-100">
         <div className="flex gap-4 flex-col sm:flex-row">
           <div className="flex-1">
             <input
@@ -301,49 +300,82 @@ export default function OperadoresAdminPage() {
         {erro && <p className="text-red-500 text-xs mt-2">{erro}</p>}
       </div>
 
-      <div className="flex items-center gap-2 mb-6 max-w-xl mx-auto">
-        <Search size={16} className="text-pink-700" />
+      {/* Filtro de busca - igual servicos */}
+      <div className="flex flex-col gap-3 justify-between items-center mb-7 max-w-xl mx-auto w-full">
         <input
           type="text"
           placeholder="Buscar operador..."
           value={filtroBusca}
           onChange={(e) => setFiltroBusca(e.target.value)}
-          className="p-2 border border-pink-200 rounded-xl text-base w-full sm:w-auto"
+          className="p-2 border border-pink-200 rounded-xl text-base w-full bg-white"
+          style={{ maxWidth: '99vw' }}
         />
       </div>
 
-      {/* CARROSSEL SWIPER */}
-      <div className="flex flex-col items-center max-w-3xl mx-auto mb-10">
+      {/* Carrossel: Setas + linha + swiper */}
+      <div className="w-full flex flex-col items-center mt-8">
+        <div className="w-full flex flex-col items-center mb-0 relative z-10 select-none">
+          <div className="flex justify-center items-center gap-4 w-full max-w-[600px] mx-auto pb-2">
+            <button
+              className="swiper-decor-arrows flex items-center justify-center rounded-full hover:bg-fuchsia-100 transition md:scale-110 scale-90 active:scale-100 shadow-md"
+              style={{ width: 48, height: 48 }}
+              onClick={() => swiperRef.current?.swiper?.slidePrev?.()}
+              aria-label="Anterior"
+              type="button"
+            >
+              <ChevronLeft className="w-9 h-9 text-fuchsia-500" />
+            </button>
+            <div className="h-2 w-44 sm:w-72 bg-gradient-to-r from-pink-400 to-fuchsia-500 rounded-full shadow-pink-200 shadow-md border-2 border-pink-300 opacity-90" />
+            <button
+              className="swiper-decor-arrows flex items-center justify-center rounded-full hover:bg-fuchsia-100 transition md:scale-110 scale-90 active:scale-100 shadow-md"
+              style={{ width: 48, height: 48 }}
+              onClick={() => swiperRef.current?.swiper?.slideNext?.()}
+              aria-label="Próximo"
+              type="button"
+            >
+              <ChevronRight className="w-9 h-9 text-fuchsia-500" />
+            </button>
+          </div>
+        </div>
         <Swiper
+          ref={swiperRef}
           modules={[Pagination, EffectCoverflow]}
           effect="coverflow"
           grabCursor
           centeredSlides
-          slidesPerView={1.45}
+          slidesPerView={1.14}
           pagination={{ clickable: true }}
           speed={700}
+          onSlideChange={swiper => setActiveIndex(swiper.activeIndex)}
           coverflowEffect={{
             rotate: 0,
             stretch: 0,
-            depth: 100,
-            modifier: 3.5,
+            depth: 80,
+            modifier: 1.9,
             slideShadows: false,
           }}
-          className="w-full"
+          className="w-full max-w-[680px] md:mt-2"
           style={{
             paddingBottom: '58px',
           }}
+          breakpoints={{
+            0:   { slidesPerView: 1.06 },
+            600: { slidesPerView: 1.16 },
+            900: { slidesPerView: 1.4 }
+          }}
         >
-          {operadoresFiltrados.map((o) => (
+          {operadoresFiltrados.map((o, idx) => (
             <SwiperSlide key={o.id}>
               <div
-                className="bg-white/95 rounded-2xl p-4 sm:p-7 shadow-xl border-2 border-pink-100 mx-auto transition duration-300 swiper-card"
+                className="swiper-card bg-white/95 rounded-2xl p-4 sm:p-7 shadow-xl border-2 border-pink-100 mx-auto transition duration-300"
                 style={{
-                  width: `${cardWidth}px`,
+                  width: '98vw',
+                  maxWidth: '520px',
                   minHeight: `${cardHeight + 70}px`,
                   display: 'flex',
                   flexDirection: 'column',
                   alignItems: 'flex-start',
+                  margin: '0 auto'
                 }}
               >
                 {o.foto_url && (
@@ -360,20 +392,23 @@ export default function OperadoresAdminPage() {
                   <p className="text-sm mt-1 text-fuchsia-700">
                     🛠 Serviços: {o.servico_ids?.length ? o.servico_ids.length : '—'}
                   </p>
-                  <div className="flex gap-2 mt-3">
-                    <button
-                      onClick={() => editarOperador(o)}
-                      className="bg-blue-500 text-white px-4 py-1.5 rounded-lg font-bold hover:bg-blue-700 transition text-base shadow"
-                    >
-                      EDITAR
-                    </button>
-                    <button
-                      onClick={() => excluirOperador(o.id)}
-                      className="bg-red-500 text-white px-4 py-1.5 rounded-lg font-bold hover:bg-red-700 transition text-base shadow"
-                    >
-                      EXCLUIR
-                    </button>
-                  </div>
+                  {/* Só mostra botões se este card for o central */}
+                  {activeIndex === idx && (
+                    <div className="botoes-servico-admin w-full flex justify-center gap-2 mt-3 mb-2 relative z-20">
+                      <button
+                        onClick={() => editarOperador(o)}
+                        className="bg-blue-500 text-white px-4 py-1.5 rounded-lg font-semibold hover:bg-blue-700 transition text-xs shadow"
+                      >
+                        EDITAR
+                      </button>
+                      <button
+                        onClick={() => excluirOperador(o.id)}
+                        className="bg-red-500 text-white px-4 py-1.5 rounded-lg font-semibold hover:bg-red-700 transition text-xs shadow"
+                      >
+                        EXCLUIR
+                      </button>
+                    </div>
+                  )}
                 </div>
               </div>
             </SwiperSlide>
@@ -381,8 +416,70 @@ export default function OperadoresAdminPage() {
         </Swiper>
       </div>
 
-      {/* CSS para Swiper: card central 10% maior, laterais opacos/desfocados */}
       <style jsx global>{`
+        .swiper-slide {
+          transition: opacity 0.4s, filter 0.4s, transform 0.45s !important;
+          opacity: 1 !important;
+          filter: none !important;
+          pointer-events: none;
+        }
+        .swiper-slide.swiper-slide-active {
+          opacity: 1 !important;
+          filter: none !important;
+          pointer-events: auto;
+          z-index: 2;
+          transform: scale(1.07) !important;
+        }
+        .swiper-slide-prev,
+        .swiper-slide-next {
+          opacity: 0.32 !important;
+          filter: blur(2.5px) grayscale(100%) !important;
+          pointer-events: none !important;
+          z-index: 1;
+          transform: scale(0.97) !important;
+        }
+        @media (max-width: 640px) {
+          .servicos-form-card {
+            padding: 0.7rem 0.45rem !important;
+            max-width: 94vw !important;
+            margin-bottom: 1rem !important;
+            border-radius: 1.15rem !important;
+            box-shadow: 0 2px 8px #d946ef1a !important;
+            font-size: 0.93rem !important;
+          }
+          .servicos-form-card input,
+          .servicos-form-card textarea,
+          .servicos-form-card select {
+            font-size: 0.95rem !important;
+            padding: 0.55rem 0.6rem !important;
+            border-radius: 0.9rem !important;
+          }
+          .servicos-form-card label {
+            font-size: 0.93rem !important;
+            margin-bottom: 0.1rem !important;
+          }
+          .servicos-form-card img {
+            max-height: 60px !important;
+            border-radius: 0.7rem !important;
+          }
+          .servicos-form-card .flex {
+            gap: 0.45rem !important;
+          }
+          .servicos-form-card button {
+            font-size: 0.97rem !important;
+            padding: 0.68rem 0 !important;
+            border-radius: 0.9rem !important;
+          }
+        }         
+        @media (min-width: 641px) {
+          .swiper-slide-prev,
+          .swiper-slide-next {
+            opacity: 0.32 !important;
+            filter: blur(2.5px) grayscale(100%) !important;
+            pointer-events: none !important;
+            transform: scale(0.97) !important;
+          }
+        }
         .swiper-pagination {
           position: absolute !important;
           bottom: 38px !important;
@@ -399,27 +496,6 @@ export default function OperadoresAdminPage() {
           background: #7c3aed;
           opacity: 1;
           box-shadow: 0 2px 8px #7c3aed50;
-        }
-        .swiper-slide {
-          opacity: 1 !important;
-          filter: none !important;
-          pointer-events: none;
-          transition: opacity .35s, transform .45s, filter .35s;
-        }
-        .swiper-slide.swiper-slide-active {
-          opacity: 1 !important;
-          filter: none !important;
-          pointer-events: auto;
-          z-index: 2;
-          transform: scale(1.1) !important;
-        }
-        .swiper-slide-prev,
-        .swiper-slide-next {
-          opacity: 0.48 !important;
-          filter: blur(1.5px) !important;
-          pointer-events: none;
-          z-index: 1;
-          transform: scale(1) !important;
         }
       `}</style>
     </main>

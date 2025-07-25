@@ -18,7 +18,6 @@ type Agendamento = {
   service_id: string
   user_id: string
 }
-
 type Operador = { id: string; nome: string; foto_url?: string }
 type Servico = { id: string; nome: string }
 type Cliente = { id: string; nome: string }
@@ -35,7 +34,6 @@ export default function AgendamentosAdminPage() {
   const [dataSelecionada, setDataSelecionada] = useState<Date>(new Date())
   const router = useRouter()
 
-  // Carrega operadores, serviços e clientes
   async function fetchRelacionamentos() {
     const { data: ops } = await supabase.from('operadores').select('id, nome, foto_url')
     setOperadores(ops || [])
@@ -45,7 +43,6 @@ export default function AgendamentosAdminPage() {
     setClientes(cls || [])
   }
 
-  // Busca agendamentos
   async function fetchAgendamentos() {
     setCarregando(true)
     setErro('')
@@ -67,52 +64,9 @@ export default function AgendamentosAdminPage() {
     setCarregando(false)
   }
 
-  useEffect(() => {
-    fetchRelacionamentos()
-  }, [])
+  useEffect(() => { fetchRelacionamentos() }, [])
+  useEffect(() => { fetchAgendamentos() }, [operadorSelecionado, dataSelecionada])
 
-  useEffect(() => {
-    fetchAgendamentos()
-    // eslint-disable-next-line
-  }, [operadorSelecionado, dataSelecionada])
-
-  // Funções de ação
-  async function marcarComoConcluido(id: string) {
-    const confirmar = confirm('Marcar como concluído?')
-    if (!confirmar) return
-    const { error } = await supabase.from('appointments').update({ status: 'concluído' }).eq('id', id)
-    if (error) {
-      alert('Erro ao concluir: ' + error.message)
-      setErro('Erro ao concluir: ' + error.message)
-    } else {
-      setSucesso('Agendamento concluído!')
-      await fetchAgendamentos()
-      setTimeout(() => setSucesso(''), 3000)
-    }
-  }
-
-  async function cancelarAgendamento(id: string) {
-    const confirmar = confirm('Cancelar este agendamento?')
-    if (!confirmar) return
-    const { error } = await supabase.from('appointments').update({ status: 'cancelado' }).eq('id', id)
-    if (error) {
-      alert('Erro ao cancelar: ' + error.message)
-      setErro('Erro ao cancelar: ' + error.message)
-    } else {
-      setSucesso('Agendamento cancelado!')
-      await fetchAgendamentos()
-      setTimeout(() => setSucesso(''), 3000)
-    }
-  }
-
-  function reagendarAgendamento(serviceId: string, agendamentoId: string) {
-    // Marca como cancelado, depois redireciona para tela de reagendamento
-    cancelarAgendamento(agendamentoId).then(() => {
-      router.push(`/admin/reagendar?service=${serviceId}&reagendar=${agendamentoId}`)
-    })
-  }
-
-  // Utils para mostrar nomes nas relações
   function nomeCliente(userId: string) {
     return clientes.find(c => c.id === userId)?.nome || '---'
   }
@@ -126,7 +80,6 @@ export default function AgendamentosAdminPage() {
     return operadores.find(o => o.id === operadorId)?.foto_url || '/logo.png'
   }
 
-  // Filtros para o calendário
   const agendamentosDoDia = agendamentos.filter((a) =>
     isSameDay(parseISO(a.data_hora), dataSelecionada) &&
     (operadorSelecionado === 'todos' || a.operador_id === operadorSelecionado)
@@ -138,8 +91,7 @@ export default function AgendamentosAdminPage() {
 
   function gerarHorariosDisponiveis(duracao: number, agendados: string[], data: Date) {
     const horarios: string[] = []
-    const horaInicio = 8
-    const horaFim = 18
+    const horaInicio = 8, horaFim = 18
     for (let h = horaInicio; h < horaFim; h++) {
       for (let m = 0; m < 60; m += duracao) {
         if (h >= 12 && h < 13) continue
@@ -158,13 +110,11 @@ export default function AgendamentosAdminPage() {
   }
   const horariosDisponiveis = gerarHorariosDisponiveis(60, horariosAgendados, dataSelecionada)
 
-  // Highlight calendário
   const marcarDias = ({ date }: { date: Date }) => {
     const tem = agendamentos.some((a) => isSameDay(parseISO(a.data_hora), date))
     return tem ? 'highlight' : undefined
   }
 
-  // Badge de status
   function badge(status: string) {
     if (status === 'concluído')
       return (
@@ -186,42 +136,44 @@ export default function AgendamentosAdminPage() {
   }
 
   return (
-    <main className="min-h-screen bg-gradient-to-br from-pink-50 to-white text-zinc-800 px-4 sm:px-8 md:px-12 lg:px-20 py-10 text-sm">
-      <div className="mb-4 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-        <div className="flex items-center gap-4">
-          <button
-            type="button"
-            onClick={() => router.push('/admin')}
-            className="flex items-center gap-2 text-white bg-pink-500 px-3 py-1.5 rounded-md hover:bg-pink-600 text-sm"
-          >
-            <Home size={18} />
-            Início
-          </button>
-          <h1 className="text-2xl font-bold text-pink-700">📅 Agendamentos</h1>
-        </div>
-        <div>
-          <label className="text-sm text-pink-800 font-medium mr-2">Filtrar por operador:</label>
-          <select
-            value={operadorSelecionado}
-            onChange={(e) => setOperadorSelecionado(e.target.value)}
-            className="border border-pink-300 rounded px-3 py-1 text-sm"
-          >
-            <option value="todos">Todos</option>
-            {operadores.map((op) => (
-              <option key={op.id} value={op.id}>
-                {op.nome}
-              </option>
-            ))}
-          </select>
-        </div>
-      </div>
-      <hr className="border-t border-pink-300 mb-6" />
-      {erro && <p className="text-red-500 mb-4">{erro}</p>}
-      {sucesso && <p className="text-green-700 bg-green-100 border border-green-200 rounded-md px-4 py-2 mb-2">{sucesso}</p>}
+    <main className="min-h-screen bg-gradient-to-br from-pink-50 via-white to-fuchsia-100 text-zinc-800 px-2 sm:px-8 md:px-16 py-10 relative overflow-x-hidden">
+      {/* BG Blur */}
+      <div className="absolute -top-32 left-1/2 -translate-x-1/2 w-[800px] h-[500px] bg-pink-200 opacity-30 rounded-full blur-3xl pointer-events-none" />
+      <div className="absolute bottom-0 right-0 w-80 h-80 bg-fuchsia-200 opacity-25 rounded-full blur-2xl pointer-events-none" />
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-start">
+      {/* Botão Início flutuante */}
+      <button
+        type="button"
+        onClick={() => router.push('/admin')}
+        className="fixed top-5 left-5 z-30 bg-gradient-to-br from-pink-100 to-fuchsia-100 border border-pink-300 text-pink-600 p-3 rounded-full shadow-lg hover:from-pink-500 hover:to-fuchsia-500 hover:text-white hover:scale-110 transition-all"
+        title="Voltar para o início"
+        aria-label="Início"
+      >
+        <Home size={28} />
+      </button>
+
+      {/* Botão Atualizar flutuante */}
+      <button
+        onClick={fetchAgendamentos}
+        className="fixed bottom-6 right-6 z-30 bg-gradient-to-br from-pink-100 to-fuchsia-200 border border-pink-300 text-pink-700 p-4 rounded-full shadow-2xl hover:from-fuchsia-600 hover:to-pink-600 hover:text-white hover:scale-110 transition-all"
+        title="Atualizar agendamentos"
+        aria-label="Atualizar"
+      >
+        <RotateCcw size={22} />
+      </button>
+
+      {/* TÍTULO CENTRALIZADO */}
+      <div className="w-full flex flex-col items-center mb-6">
+        <h1 className="text-3xl sm:text-4xl font-extrabold text-pink-700 text-center tracking-tight relative inline-block leading-tight drop-shadow-pink-100">
+          Meus atendimentos
+          <span className="block h-1 w-2/3 mx-auto bg-gradient-to-r from-pink-400 to-fuchsia-500 rounded-full mt-4 animate-pulse transition-all duration-300" />
+        </h1>
+      </div>
+
+      {/* GRELHA: Calendário, Horários, Foto+Filtro */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-7 items-start mb-10">
         {/* Calendário */}
-        <div>
+        <div className="calendar-modern bg-white/80 rounded-2xl shadow-xl p-3 border-2 border-pink-100 backdrop-blur-lg">
           <Calendar
             locale="pt-BR"
             onChange={(date) => setDataSelecionada(date as Date)}
@@ -230,14 +182,14 @@ export default function AgendamentosAdminPage() {
             calendarType="iso8601"
             formatShortWeekday={(locale, date) => format(date, 'EEEEE', { locale: ptBR })}
             formatMonthYear={(locale, date) => format(date, 'MMMM yyyy', { locale: ptBR })}
-            className="rounded-xl shadow-xl p-4 border border-pink-200 bg-white/80 backdrop-blur-md calendar-modern"
+            className="w-full border-0 bg-transparent"
           />
         </div>
         {/* Horários disponíveis */}
-        <div>
-          <h3 className="text-lg font-semibold text-pink-700 mb-2">⏳ Horários Disponíveis</h3>
+        <div className="w-full">
+          <h3 className="text-lg font-bold text-pink-700 mb-2 text-center">⏳ Horários Disponíveis</h3>
           {horariosDisponiveis.length === 0 ? (
-            <p className="text-gray-600">Nenhum horário disponível.</p>
+            <p className="text-gray-600 text-center">Nenhum horário disponível.</p>
           ) : (
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 animate-fade-in">
               {horariosDisponiveis.map((hora) => (
@@ -251,83 +203,87 @@ export default function AgendamentosAdminPage() {
             </div>
           )}
         </div>
-        {/* Foto do operador */}
-        <div className="flex justify-center items-start">
-          <img
-            src={
-              operadorSelecionado === 'todos'
-                ? '/logo.png'
-                : fotoOperador(operadorSelecionado)
-            }
-            alt="Foto do operador"
-            className="w-full max-w-md h-[280px] object-cover rounded-lg shadow-xl bg-zinc-100 mx-auto mt-4"
-          />
-        </div>
+        {/* Foto do operador + filtro */}
+<div className="flex flex-col items-center gap-3">
+  <img
+    src={
+      operadorSelecionado === 'todos'
+        ? '/logo.png'
+        : fotoOperador(operadorSelecionado)
+    }
+    alt="Foto do operador"
+    className="w-full max-w-md h-[230px] object-cover rounded-lg shadow-xl bg-zinc-100 mx-auto mt-4"
+  />
+  {/* Filtro ocupa a mesma largura da foto */}
+  <div className="w-full max-w-md mt-2">
+    <div className="bg-white/80 border border-pink-100 rounded-xl px-6 py-2 shadow flex items-center gap-3 w-full">
+      <label className="text-sm text-pink-800 font-medium">Operador:</label>
+      <select
+        value={operadorSelecionado}
+        onChange={(e) => setOperadorSelecionado(e.target.value)}
+        className="border border-pink-200 rounded px-3 py-1 text-sm shadow bg-white focus:ring-2 focus:ring-pink-200 transition w-full"
+      >
+        <option value="todos">Todos</option>
+        {operadores.map((op) => (
+          <option key={op.id} value={op.id}>
+            {op.nome}
+          </option>
+        ))}
+      </select>
+    </div>
+  </div>
+</div>
+
       </div>
-      <div className="mt-10">
-        <h2 className="text-2xl font-bold mb-1 text-center text-pink-700 tracking-wide border-b border-pink-300 pb-2">
+
+      {/* LINHA FINA DIVISÓRIA */}
+      <div className="w-full max-w-3xl mx-auto border-t-[1.5px] border-pink-300 mb-7 shadow-pink-100" />
+
+      {/* TABELA DE AGENDAMENTOS */}
+      <div className="max-w-3xl mx-auto w-full">
+        <h2 className="text-2xl font-bold mb-2 text-center text-pink-700 tracking-wide">
           Agendamentos em {format(dataSelecionada, 'dd/MM/yyyy')}
         </h2>
         <p className="text-sm text-gray-700 text-center mb-4">
           📊 Total: {agendamentosDoDia.length} agendamento{agendamentosDoDia.length !== 1 ? 's' : ''}
         </p>
         {carregando ? (
-          <p className="text-center text-gray-500">Carregando agendamentos...</p>
+          <div className="flex justify-center items-center h-32">
+            <span className="w-10 h-10 border-4 border-pink-300 border-t-fuchsia-500 rounded-full animate-spin inline-block" />
+            <span className="ml-3 text-pink-700 font-medium">Carregando agendamentos...</span>
+          </div>
         ) : agendamentosDoDia.length === 0 ? (
           <p className="text-center text-gray-500">Nenhum agendamento neste dia.</p>
         ) : (
-          <ul className="flex flex-col gap-4 max-w-xl mx-auto">
-            {agendamentosDoDia.map((a) => (
-              <li
-                key={a.id}
-                className="border p-4 rounded bg-white/60 backdrop-blur-md shadow-md hover:shadow-lg transition-all"
-              >
-                <p><b>👤 Cliente:</b> {nomeCliente(a.user_id)}</p>
-                <p><b>👩‍🔧 Profissional:</b> {nomeOperador(a.operador_id)}</p>
-                <p><b>💅 Serviço:</b> {nomeServico(a.service_id)}</p>
-                <p><b>🕒 Horário:</b> {format(new Date(a.data_hora), 'HH:mm')}</p>
-                <p className="text-xs mt-1 text-pink-600 font-mono">
-                  <b>ID Atendimento:</b> {a.codigo_atendimento || a.id}
-                </p>
-                <p><b>Status:</b> {badge(a.status)}</p>
-                <div className="flex gap-2 mt-3 flex-wrap">
-                  {a.status === 'agendado' && (
-                    <>
-                      <button
-                        type="button"
-                        onClick={() => marcarComoConcluido(a.id)}
-                        className="bg-green-500 text-white px-3 py-1 rounded hover:bg-green-600 transition shadow hover:shadow-green-400/40"
-                      >
-                        <CheckCircle size={16} /> Concluir
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => cancelarAgendamento(a.id)}
-                        className="bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600 transition shadow hover:shadow-red-400/40"
-                      >
-                        <XCircle size={16} /> Cancelar
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => reagendarAgendamento(a.service_id, a.id)}
-                        className="bg-blue-500 text-white px-3 py-1 rounded hover:bg-blue-600 transition shadow hover:shadow-blue-400/40 flex items-center gap-1"
-                      >
-                        <RotateCcw size={16} /> Reagendar
-                      </button>
-                    </>
-                  )}
-                  {a.status === 'concluído' && (
-                    <span className="text-green-700 font-semibold">Atendimento concluído</span>
-                  )}
-                  {a.status === 'cancelado' && (
-                    <span className="text-red-600 font-semibold">Atendimento cancelado</span>
-                  )}
-                </div>
-              </li>
-            ))}
-          </ul>
+          <div className="overflow-x-auto rounded-lg shadow-md">
+            <table className="w-full text-sm bg-white/80 rounded-lg">
+              <thead>
+                <tr className="bg-pink-50 text-pink-900 font-bold">
+                  <th className="py-2 px-3 text-left">Cliente</th>
+                  <th className="py-2 px-3 text-left">Profissional</th>
+                  <th className="py-2 px-3 text-left">Serviço</th>
+                  <th className="py-2 px-3 text-center">Horário</th>
+                  <th className="py-2 px-3 text-center">Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                {agendamentosDoDia.map((a) => (
+                  <tr key={a.id} className="border-t border-pink-100 hover:bg-pink-50/70 transition">
+                    <td className="py-2 px-3">{nomeCliente(a.user_id)}</td>
+                    <td className="py-2 px-3">{nomeOperador(a.operador_id)}</td>
+                    <td className="py-2 px-3">{nomeServico(a.service_id)}</td>
+                    <td className="py-2 px-3 text-center">{format(new Date(a.data_hora), 'HH:mm')}h</td>
+                    <td className="py-2 px-3 text-center">{badge(a.status)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         )}
+        {erro && <p className="text-red-500 mt-4">{erro}</p>}
+        {sucesso && <p className="text-green-700 bg-green-100 border border-green-200 rounded-md px-4 py-2 mt-2">{sucesso}</p>}
       </div>
+
       <style jsx global>{`
         .react-calendar__tile.highlight {
           background: #fee2e2 !important;
@@ -337,6 +293,33 @@ export default function AgendamentosAdminPage() {
           box-shadow: 0 0 0 2px #f472b644;
           transition: background 0.2s;
         }
+        .animate-fade-in {
+          animation: fadeIn 0.7s;
+        }
+        @keyframes fadeIn {
+          0% { opacity: 0; transform: translateY(10px);}
+          100% { opacity: 1; transform: none;}
+        }
+        /* Esconde o ponto ou linha do dia atual no react-calendar */
+.react-calendar__tile--now {
+  background: none !important;
+  color: inherit !important;
+  box-shadow: none !important;
+  position: relative;
+}
+.react-calendar__tile--now abbr {
+  border-bottom: none !important;
+  text-decoration: none !important;
+  box-shadow: none !important;
+}
+.react-calendar__tile--now::after,
+.react-calendar__tile--now::before {
+  display: none !important;
+  box-shadow: none !important;
+  content: none !important;
+}
+
+
       `}</style>
     </main>
   )

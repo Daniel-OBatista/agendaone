@@ -57,7 +57,7 @@ export default function AdminPage() {
             onClick={() => router.push('/admin/operador')}
             className="flex items-center gap-3 justify-center text-lg bg-gradient-to-r from-pink-100 to-white border border-pink-300 text-pink-700 font-semibold py-3 rounded-2xl shadow hover:from-pink-800 hover:to-fuchsia-900 hover:text-white hover:scale-105 transition-all"
           >
-            <UserCog size={24} /> Gerenciar Operadores
+            <UserCog size={24} /> Gerenciar Profissional
           </button>
 
           <button
