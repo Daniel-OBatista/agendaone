@@ -51,3 +51,4 @@ node_modules/
 .wwebjs_cache/
 .wwebjs_auth/
 
+env.local
