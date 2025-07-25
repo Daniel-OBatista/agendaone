@@ -36,7 +36,7 @@ export default function ServicosAdminPage() {
   const [modoEdicao, setModoEdicao] = useState(false)
   const [idEditando, setIdEditando] = useState<string | null>(null)
   const [filtroBusca, setFiltroBusca] = useState('')
-
+  const [activeIndex, setActiveIndex] = useState(0)
   const router = useRouter()
   const swiperRef = useRef<any>(null) // Referência para Swiper
 
@@ -337,78 +337,85 @@ export default function ServicosAdminPage() {
         </div>
 
         <Swiper
-          ref={swiperRef}
-          modules={[Pagination, EffectCoverflow]}
-          effect="coverflow"
-          grabCursor
-          centeredSlides
-          slidesPerView={1.14}
-          pagination={{ clickable: true }}
-          speed={700}
-          coverflowEffect={{
-            rotate: 0,
-            stretch: 0,
-            depth: 80,
-            modifier: 1.9,
-            slideShadows: false,
-          }}
-          className="w-full max-w-[680px] md:mt-2"
-          style={{
-            paddingBottom: '58px',
-          }}
-          breakpoints={{
-            0:   { slidesPerView: 1.06 },
-            600: { slidesPerView: 1.16 },
-            900: { slidesPerView: 1.4 }
-          }}
-        >
-          {servicosFiltrados.map((s) => (
-            <SwiperSlide key={s.id}>
-              <div
-                className="swiper-card bg-white/95 rounded-2xl p-4 sm:p-7 shadow-xl border-2 border-pink-100 mx-auto transition duration-300"
-                style={{
-                  width: '98vw',
-                  maxWidth: '520px',
-                  minHeight: `${cardHeight + 70}px`,
-                  display: 'flex',
-                  flexDirection: 'column',
-                  alignItems: 'flex-start',
-                  margin: '0 auto'
-                }}
+  ref={swiperRef}
+  modules={[Pagination, EffectCoverflow]}
+  effect="coverflow"
+  grabCursor
+  centeredSlides
+  slidesPerView={1.14}
+  pagination={{ clickable: true }}
+  speed={700}
+  onSlideChange={swiper => setActiveIndex(swiper.activeIndex)}
+  coverflowEffect={{
+    rotate: 0,
+    stretch: 0,
+    depth: 80,
+    modifier: 1.9,
+    slideShadows: false,
+  }}
+  className="w-full max-w-[680px] md:mt-2"
+  style={{
+    paddingBottom: '58px',
+  }}
+  breakpoints={{
+    0:   { slidesPerView: 1.06 },
+    600: { slidesPerView: 1.16 },
+    900: { slidesPerView: 1.4 }
+  }}
+>
+  {servicosFiltrados.map((s, idx) => (
+    <SwiperSlide key={s.id}>
+      <div
+        className="swiper-card bg-white/95 rounded-2xl p-4 sm:p-7 shadow-xl border-2 border-pink-100 mx-auto transition duration-300"
+        style={{
+          width: '98vw',
+          maxWidth: '520px',
+          minHeight: `${cardHeight + 70}px`,
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'flex-start',
+          margin: '0 auto'
+        }}
+      >
+        {s.imagem_url && (
+          <img
+            src={s.imagem_url}
+            alt={s.nome}
+            className="w-full h-[252px] object-cover rounded-xl mb-2 bg-zinc-100"
+          />
+        )}
+        <div className="w-full flex flex-col items-start px-1">
+          <p className="font-bold text-pink-700 text-lg">{s.nome}</p>
+          <p className="text-sm text-zinc-800 min-h-[32px]">{s.descricao}</p>
+          <div className="flex gap-2 flex-wrap mt-2">
+            <span className="text-xs text-green-700 font-bold">R$ {Number(s.valor).toFixed(2)}</span>
+            <span className="text-xs text-blue-700 font-semibold">⏱ {s.duracao} min</span>
+          </div>
+          {/* Só mostra os botões se este card for o central */}
+          {/* Só mostra os botões se este card for o central */}
+          {activeIndex === idx && (
+            <div className="botoes-servico-admin w-full flex justify-center gap-2 mt-3 mb-2 relative z-20">
+              <button
+                onClick={() => editarServico(s)}
+                className="bg-blue-500 text-white px-4 py-1.5 rounded-lg font-semibold hover:bg-blue-700 transition text-xs shadow"
               >
-                {s.imagem_url && (
-                  <img
-                    src={s.imagem_url}
-                    alt={s.nome}
-                    className="w-full h-[252px] object-cover rounded-xl mb-2 bg-zinc-100"
-                  />
-                )}
-                <div className="w-full flex flex-col items-start px-1">
-                  <p className="font-bold text-pink-700 text-lg">{s.nome}</p>
-                  <p className="text-sm text-zinc-800 min-h-[32px]">{s.descricao}</p>
-                  <div className="flex gap-2 flex-wrap mt-2">
-                    <span className="text-xs text-green-700 font-bold">R$ {Number(s.valor).toFixed(2)}</span>
-                    <span className="text-xs text-blue-700 font-semibold">⏱ {s.duracao} min</span>
-                  </div>
-                  <div className="flex gap-2 mt-3 mb-2">
-                    <button
-                      onClick={() => editarServico(s)}
-                      className="bg-blue-500 text-white px-4 py-1.5 rounded-lg font-semibold hover:bg-blue-700 transition text-xs shadow"
-                    >
-                      EDITAR
-                    </button>
-                    <button
-                      onClick={() => excluirServico(s.id)}
-                      className="bg-red-500 text-white px-4 py-1.5 rounded-lg font-semibold hover:bg-red-700 transition text-xs shadow"
-                    >
-                      EXCLUIR
-                    </button>
-                  </div>
-                </div>
-              </div>
-            </SwiperSlide>
-          ))}
-        </Swiper>
+                EDITAR
+              </button>
+              <button
+                onClick={() => excluirServico(s.id)}
+                className="bg-red-500 text-white px-4 py-1.5 rounded-lg font-semibold hover:bg-red-700 transition text-xs shadow"
+              >
+                EXCLUIR
+              </button>
+            </div>
+          )}
+
+        </div>
+      </div>
+    </SwiperSlide>
+  ))}
+</Swiper>
+
       </div>
 
       {/* Botão atualizar canto inferior direito */}

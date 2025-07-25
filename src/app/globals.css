@@ -140,6 +140,30 @@ body {
   text-align: center;
 }
 
+/* ========== SWIPER: VISUAL + INTERATIVIDADE DOS CARDS ========== */
+.swiper-slide {
+  transition: opacity 0.4s, filter 0.4s, transform 0.45s !important;
+  opacity: 1 !important;
+  filter: none !important;
+  /* pointer-events: none; <-- NUNCA coloque aqui! */
+}
+.swiper-slide.swiper-slide-active {
+  opacity: 1 !important;
+  filter: none !important;
+  pointer-events: auto;
+  z-index: 2;
+  transform: scale(1.07) !important;
+}
+.swiper-slide-prev,
+.swiper-slide-next {
+  opacity: 0.32 !important;
+  filter: blur(2.5px) grayscale(100%) !important;
+  pointer-events: none !important; /* só os laterais não recebem clique */
+  z-index: 1;
+  transform: scale(0.97) !important;
+}
+
+/* ========== SWIPER: TAMANHO/ESTILO MOBILE ========== */
 @media (max-width: 640px) {
   .swiper-card {
     width: 86vw !important;
@@ -157,3 +181,15 @@ body {
     font-size: 0.93rem !important;
   }
 }
+
+/* Botões dos slides laterais no desktop ficam visíveis, se quiser esconder, adicione aqui: 
+@media (min-width: 641px) {
+  .swiper-slide-prev button,
+  .swiper-slide-next button {
+    opacity: 1 !important;
+    filter: none !important;
+    pointer-events: auto !important;
+  }
+}
+*/
+
