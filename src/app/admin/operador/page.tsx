@@ -18,11 +18,29 @@ type Operador = {
   telefone: string
   foto_url?: string
   servico_ids: string[]
+  horarios?: HorarioDia[]
+  ausencias?: Ausencia[]
 }
 
 type Servico = {
   id: string
   nome: string
+}
+
+const DIAS_LABELS = ['Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado']
+
+type HorarioDia = null | {
+  dia_semana: number
+  inicio: string
+  fim: string
+  almoco_inicio: string
+  almoco_fim: string
+}
+
+type Ausencia = {
+  inicio: string
+  fim: string
+  diaTodo?: boolean
 }
 
 export default function OperadoresAdminPage() {
@@ -42,6 +60,20 @@ export default function OperadoresAdminPage() {
   const [imagemParaRecorte, setImagemParaRecorte] = useState<string | null>(null)
   const [activeIndex, setActiveIndex] = useState(0)
   const swiperRef = useRef<any>(null)
+
+  // Horários por dia da semana (segunda a sábado)
+  const [horarios, setHorarios] = useState<HorarioDia[]>([null, null, null, null, null, null])
+
+  // Ausências
+  const [ausencias, setAusencias] = useState<Ausencia[]>([])
+  const [dataAusencia, setDataAusencia] = useState('')
+  const [horaInicioAusencia, setHoraInicioAusencia] = useState('')
+  const [horaFimAusencia, setHoraFimAusencia] = useState('')
+  const [diaTodoAusencia, setDiaTodoAusencia] = useState(false)
+
+  // Accordion
+  const [mostrarHorarios, setMostrarHorarios] = useState(false)
+  const [mostrarAusencias, setMostrarAusencias] = useState(false)
 
   useEffect(() => {
     verificarAdmin()
@@ -66,14 +98,59 @@ export default function OperadoresAdminPage() {
     await fetchServicos()
   }
 
+  async function fetchHorarios(operador_id: string) {
+    const { data } = await supabase
+      .from('horarios_operador')
+      .select('*')
+      .eq('operador_id', operador_id)
+    const dias: HorarioDia[] = [null, null, null, null, null, null]
+    if (data) {
+      data.forEach((h: any) => {
+        const idx = (h.dia_semana ?? 1) - 1
+        if (idx >= 0 && idx < 6) {
+          dias[idx] = {
+            dia_semana: h.dia_semana,
+            inicio: h.hora_inicio,
+            fim: h.hora_fim,
+            almoco_inicio: h.almoco_inicio,
+            almoco_fim: h.almoco_fim,
+          }
+        }
+      })
+    }
+    return dias
+  }
+
+  async function fetchAusencias(operador_id: string) {
+    const { data } = await supabase
+      .from('ausencias_operador')
+      .select('inicio, fim, diaTodo')
+      .eq('operador_id', operador_id)
+    return data || []
+  }
+
   async function fetchOperadores() {
     const { data, error } = await supabase.from('operadores').select('*')
-    if (!error && data) setOperadores(data)
+    if (!error && data) {
+      const operadoresComExtras = await Promise.all(data.map(async (op: Operador) => {
+        const horarios = await fetchHorarios(op.id)
+        const ausencias = await fetchAusencias(op.id)
+        return { ...op, horarios, ausencias }
+      }))
+      setOperadores(operadoresComExtras)
+    }
   }
 
   async function fetchServicos() {
     const { data } = await supabase.from('services').select('id, nome')
     if (data) setServicos(data)
+  }
+
+  async function carregarHorariosOperador(operadorId: string) {
+    const dias = await fetchHorarios(operadorId)
+    setHorarios(dias)
+    const aus = await fetchAusencias(operadorId)
+    setAusencias(aus)
   }
 
   async function salvarOperador() {
@@ -109,18 +186,64 @@ export default function OperadoresAdminPage() {
       foto_url: foto_url || fotoPreview || null,
     }
 
+    let operador_id: string | null = null
+
     if (modoEdicao && idEditando) {
       await supabase.from('operadores').update(dados).eq('id', idEditando)
+      operador_id = idEditando
+      await supabase.from('horarios_operador').delete().eq('operador_id', idEditando)
+      await supabase.from('ausencias_operador').delete().eq('operador_id', idEditando)
     } else {
-      const { error: insertError } = await supabase.from('operadores').insert([dados])
-      if (insertError) {
-        setErro('Erro ao salvar: ' + insertError.message)
+      const { data: insertData, error: insertError } = await supabase
+        .from('operadores')
+        .insert([dados])
+        .select()
+        .single()
+
+      if (insertError || !insertData) {
+        setErro('Erro ao salvar operador: ' + insertError?.message)
         return
+      }
+
+      operador_id = insertData.id
+    }
+
+    // Salvar horários
+    if (operador_id) {
+      const horariosSalvos = horarios
+        .filter((h) => !!h)
+        .map((h) => ({
+          operador_id,
+          dia_semana: h!.dia_semana,
+          hora_inicio: h!.inicio,
+          hora_fim: h!.fim,
+          almoco_inicio: h!.almoco_inicio,
+          almoco_fim: h!.almoco_fim,
+        }))
+      if (horariosSalvos.length > 0) {
+        const { error: horarioError } = await supabase
+          .from('horarios_operador')
+          .insert(horariosSalvos)
+        if (horarioError) {
+          setErro('Erro ao salvar horários: ' + horarioError.message)
+          return
+        }
+      }
+
+      // Salvar ausências
+      if (ausencias.length > 0) {
+        const ausenciasSalvas = ausencias.map(aus => ({
+          operador_id,
+          inicio: aus.inicio,
+          fim: aus.fim,
+          diaTodo: aus.diaTodo || false
+        }))
+        await supabase.from('ausencias_operador').insert(ausenciasSalvas)
       }
     }
 
     cancelarEdicao()
-    fetchOperadores()
+    setTimeout(fetchOperadores, 350) // Aguarda 350ms para garantir atualização do banco
   }
 
   function editarOperador(op: Operador) {
@@ -132,6 +255,8 @@ export default function OperadoresAdminPage() {
     setServicoSelecionado(op.servico_ids || [])
     setFoto(null)
     setFotoPreview(op.foto_url || null)
+    setHorarios(op.horarios || [null, null, null, null, null, null])
+    setAusencias(op.ausencias || [])
   }
 
   function cancelarEdicao() {
@@ -144,11 +269,21 @@ export default function OperadoresAdminPage() {
     setFoto(null)
     setFotoPreview(null)
     setErro('')
+    setHorarios([null, null, null, null, null, null])
+    setAusencias([])
+    setDataAusencia('')
+    setHoraInicioAusencia('')
+    setHoraFimAusencia('')
+    setDiaTodoAusencia(false)
+    setMostrarHorarios(false)
+    setMostrarAusencias(false)
   }
 
   async function excluirOperador(id: string) {
     if (!confirm('Deseja realmente excluir este operador?')) return
     await supabase.from('operadores').delete().eq('id', id)
+    await supabase.from('horarios_operador').delete().eq('operador_id', id)
+    await supabase.from('ausencias_operador').delete().eq('operador_id', id)
     fetchOperadores()
   }
 
@@ -172,7 +307,7 @@ export default function OperadoresAdminPage() {
     setImagemParaRecorte(null)
   }
 
-  const cardHeight = 325
+  const cardHeight = 360
 
   return (
     <main className="min-h-screen bg-gradient-to-br from-pink-50 via-white to-fuchsia-100 text-zinc-800 px-3 sm:px-8 md:px-16 py-8 relative overflow-hidden">
@@ -196,7 +331,6 @@ export default function OperadoresAdminPage() {
         <Home size={28} />
       </button>
 
-      {/* Botão atualizar canto inferior direito */}
       <button
         onClick={fetchOperadores}
         className="fixed bottom-6 right-6 z-30 bg-gradient-to-br from-pink-100 to-fuchsia-200 border border-pink-300 text-pink-700 p-4 rounded-full shadow-2xl hover:from-fuchsia-600 hover:to-pink-600 hover:text-white hover:scale-110 transition-all"
@@ -213,7 +347,7 @@ export default function OperadoresAdminPage() {
         </h1>
       </div>
 
-      <div className="servicos-form-card bg-white/90 shadow-2xl rounded-2xl p-4 sm:p-6 mb-6 max-w-xl mx-auto backdrop-blur-lg border-2 border-pink-100">
+      <div className="servicos-form-card bg-white/90 shadow-2xl rounded-2xl p-4 sm:p-6 mb-6 max-w-3xl mx-auto backdrop-blur-lg border-2 border-pink-100">
         <div className="flex gap-4 flex-col sm:flex-row">
           <div className="flex-1">
             <input
@@ -253,6 +387,193 @@ export default function OperadoresAdminPage() {
                 </option>
               ))}
             </select>
+
+            {/* Accordion Horários */}
+            <div className="mt-6 mb-2">
+              <button
+                type="button"
+                className="w-full flex justify-between items-center px-4 py-3 bg-pink-100 hover:bg-pink-200 rounded-xl border-2 border-pink-200 font-semibold text-pink-700 text-base transition"
+                onClick={() => setMostrarHorarios(v => !v)}
+              >
+                Horários de Expediente
+                <span className="ml-2">{mostrarHorarios ? "▲" : "▼"}</span>
+              </button>
+              {mostrarHorarios && (
+                <div className="flex flex-col gap-4 mt-4 mb-2">
+                  {DIAS_LABELS.map((dia, idx) => (
+                    <div key={idx} className="bg-pink-50 border rounded-2xl p-4 w-full max-w-2xl mx-auto">
+                      <div className="flex flex-row items-center gap-2">
+                        <input
+                          type="checkbox"
+                          checked={!!horarios[idx]}
+                          onChange={() => {
+                            const copia = [...horarios]
+                            if (copia[idx]) {
+                              copia[idx] = null
+                            } else {
+                              copia[idx] = {
+                                dia_semana: idx + 1,
+                                inicio: '',
+                                fim: '',
+                                almoco_inicio: '',
+                                almoco_fim: ''
+                              }
+                            }
+                            setHorarios([...copia])
+                          }}
+                        />
+                        <span className="font-medium">{dia}</span>
+                      </div>
+                      {!!horarios[idx] && (
+                        <>
+                          <div className="flex flex-row items-center gap-2 mt-3 ml-6">
+                            <label className="font-semibold min-w-[80px]">Expediente:</label>
+                            <input
+                              type="time"
+                              value={horarios[idx]?.inicio || ''}
+                              onChange={e => {
+                                const copia = [...horarios]
+                                copia[idx]!.inicio = e.target.value
+                                setHorarios([...copia])
+                              }}
+                              className="border rounded p-1 w-[95px] max-w-full"
+                            />
+                            <span>às</span>
+                            <input
+                              type="time"
+                              value={horarios[idx]?.fim || ''}
+                              onChange={e => {
+                                const copia = [...horarios]
+                                copia[idx]!.fim = e.target.value
+                                setHorarios([...copia])
+                              }}
+                              className="border rounded p-1 w-[95px] max-w-full"
+                            />
+                          </div>
+                          <div className="flex flex-row items-center gap-2 mt-2 ml-6">
+                            <label className="font-semibold min-w-[80px]">Almoço:</label>
+                            <input
+                              type="time"
+                              value={horarios[idx]?.almoco_inicio || ''}
+                              onChange={e => {
+                                const copia = [...horarios]
+                                copia[idx]!.almoco_inicio = e.target.value
+                                setHorarios([...copia])
+                              }}
+                              className="border rounded p-1 w-[95px] max-w-full"
+                            />
+                            <span>às</span>
+                            <input
+                              type="time"
+                              value={horarios[idx]?.almoco_fim || ''}
+                              onChange={e => {
+                                const copia = [...horarios]
+                                copia[idx]!.almoco_fim = e.target.value
+                                setHorarios([...copia])
+                              }}
+                              className="border rounded p-1 w-[95px] max-w-full"
+                            />
+                          </div>
+                        </>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Accordion Ausências */}
+            <div className="mt-4">
+              <button
+                type="button"
+                className="w-full flex justify-between items-center px-4 py-3 bg-pink-100 hover:bg-pink-200 rounded-xl border-2 border-pink-200 font-semibold text-pink-700 text-base transition"
+                onClick={() => setMostrarAusencias(v => !v)}
+              >
+                Datas de ausência (não trabalhará)
+                <span className="ml-2">{mostrarAusencias ? "▲" : "▼"}</span>
+              </button>
+              {mostrarAusencias && (
+                <div className="flex flex-col mt-4">
+                  <div className="flex flex-wrap items-center gap-2 mb-2">
+                    <input
+                      type="date"
+                      value={dataAusencia}
+                      onChange={e => setDataAusencia(e.target.value)}
+                      className="border p-2 rounded w-40"
+                    />
+                    {!diaTodoAusencia && (
+                      <>
+                        <input
+                          type="time"
+                          value={horaInicioAusencia}
+                          onChange={e => setHoraInicioAusencia(e.target.value)}
+                          className="border p-2 rounded w-28"
+                        />
+                        <span>até</span>
+                        <input
+                          type="time"
+                          value={horaFimAusencia}
+                          onChange={e => setHoraFimAusencia(e.target.value)}
+                          className="border p-2 rounded w-28"
+                        />
+                      </>
+                    )}
+                    <label className="flex items-center gap-2 ml-2">
+                      <input
+                        type="checkbox"
+                        checked={diaTodoAusencia}
+                        onChange={e => setDiaTodoAusencia(e.target.checked)}
+                      />
+                      Dia todo
+                    </label>
+                    <button
+                      onClick={() => {
+                        if (
+                          dataAusencia &&
+                          (
+                            (diaTodoAusencia && dataAusencia) ||
+                            (!diaTodoAusencia && horaInicioAusencia && horaFimAusencia)
+                          )
+                        ) {
+                          const novaAusencia: Ausencia = {
+                            inicio: `${dataAusencia}T${diaTodoAusencia ? '00:00' : horaInicioAusencia}`,
+                            fim: `${dataAusencia}T${diaTodoAusencia ? '23:59' : horaFimAusencia}`,
+                            diaTodo: diaTodoAusencia
+                          }
+                          setAusencias([...ausencias, novaAusencia])
+                          setDataAusencia('')
+                          setHoraInicioAusencia('')
+                          setHoraFimAusencia('')
+                          setDiaTodoAusencia(false)
+                        }
+                      }}
+                      className="bg-pink-500 text-white rounded px-5 py-2 hover:bg-pink-700 font-semibold text-sm"
+                      type="button"
+                    >
+                      + Adicionar ausência
+                    </button>
+                  </div>
+                  <ul className="mt-2 space-y-1">
+                    {ausencias.map((a, i) => (
+                      <li key={i} className="flex items-center gap-2 text-sm">
+                        <span>
+                          {a.diaTodo
+                            ? `${a.inicio.slice(0, 10)} (dia todo)`
+                            : `${a.inicio.replace('T', ' ')} até ${a.fim.replace('T', ' ')}`}
+                        </span>
+                        <button
+                          className="text-xs text-red-500 hover:underline"
+                          onClick={() => setAusencias(ausencias.filter((_, idx) => idx !== i))}
+                          type="button"
+                        >
+                          Remover
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+            </div>
 
             <div className="mb-2">
               <label className="block text-sm font-medium text-pink-700 mb-1">Foto:</label>
@@ -392,24 +713,56 @@ export default function OperadoresAdminPage() {
                   <p className="text-sm mt-1 text-fuchsia-700">
                     🛠 Serviços: {o.servico_ids?.length ? o.servico_ids.length : '—'}
                   </p>
-                  {/* Só mostra botões se este card for o central */}
-                  {activeIndex === idx && (
-                    <div className="botoes-servico-admin w-full flex justify-center gap-2 mt-3 mb-2 relative z-20">
-                      <button
-                        onClick={() => editarOperador(o)}
-                        className="bg-blue-500 text-white px-4 py-1.5 rounded-lg font-semibold hover:bg-blue-700 transition text-xs shadow"
-                      >
-                        EDITAR
-                      </button>
-                      <button
-                        onClick={() => excluirOperador(o.id)}
-                        className="bg-red-500 text-white px-4 py-1.5 rounded-lg font-semibold hover:bg-red-700 transition text-xs shadow"
-                      >
-                        EXCLUIR
-                      </button>
+                  {/* HORÁRIOS CARD */}
+                  {Array.isArray(o.horarios) && o.horarios.filter(Boolean).length > 0 && (
+                    <div className="mt-2 w-full">
+                      <p className="text-xs font-bold text-pink-700 mb-1">Expediente:</p>
+                      <ul className="text-xs text-zinc-700 leading-5">
+                        {o.horarios.map((h, i) => h && (
+                          <li key={i}>
+                            <span className="font-semibold">{DIAS_LABELS[i]}: </span>
+                            {h.inicio} às {h.fim}
+                            {h.almoco_inicio && h.almoco_fim &&
+                              <> | Almoço: {h.almoco_inicio} às {h.almoco_fim}</>
+                            }
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                  {/* AUSÊNCIAS CARD */}
+                  {Array.isArray(o.ausencias) && o.ausencias.length > 0 && (
+                    <div className="mt-1 w-full">
+                      <p className="text-xs font-bold text-pink-700 mb-1">Ausências:</p>
+                      <ul className="text-xs text-zinc-700 leading-5">
+                        {o.ausencias.map((a, i) => (
+                          <li key={i}>
+                            {a.diaTodo
+                              ? `${a.inicio.slice(0, 10)} (dia todo)`
+                              : `${a.inicio.replace('T', ' ')} até ${a.fim.replace('T', ' ')}`}
+                          </li>
+                        ))}
+                      </ul>
                     </div>
                   )}
                 </div>
+                {/* Botões de ação */}
+                {activeIndex === idx && (
+                  <div className="botoes-servico-admin w-full flex justify-center gap-2 mt-3 mb-2 relative z-20">
+                    <button
+                      onClick={() => editarOperador(o)}
+                      className="bg-blue-500 text-white px-4 py-1.5 rounded-lg font-semibold hover:bg-blue-700 transition text-xs shadow"
+                    >
+                      EDITAR
+                    </button>
+                    <button
+                      onClick={() => excluirOperador(o.id)}
+                      className="bg-red-500 text-white px-4 py-1.5 rounded-lg font-semibold hover:bg-red-700 transition text-xs shadow"
+                    >
+                      EXCLUIR
+                    </button>
+                  </div>
+                )}
               </div>
             </SwiperSlide>
           ))}
@@ -470,7 +823,7 @@ export default function OperadoresAdminPage() {
             padding: 0.68rem 0 !important;
             border-radius: 0.9rem !important;
           }
-        }         
+        }
         @media (min-width: 641px) {
           .swiper-slide-prev,
           .swiper-slide-next {
