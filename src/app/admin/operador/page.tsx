@@ -583,8 +583,7 @@ export default function OperadoresAdminPage() {
         >
           {operadoresFiltrados.map((o, idx) => (
             <SwiperSlide key={o.id}>
-              <div
-  className="swiper-card bg-white rounded-2xl p-4 sm:p-7 shadow-3xl border-0 mx-auto transition duration-300"
+              <div className="swiper-card bg-white rounded-2xl p-4 sm:p-7 shadow-3xl border-0 mx-auto transition duration-300"
                 style={{
                   width: '98vw',
                   maxWidth: '520px',

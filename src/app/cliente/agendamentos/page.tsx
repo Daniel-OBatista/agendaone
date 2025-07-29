@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { Suspense, useEffect, useState } from 'react'
 import { supabase } from '../../lib/supabaseClient'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Calendar from 'react-calendar'
@@ -34,7 +34,15 @@ type Agendamento = {
   operador_id: string
 }
 
-export default function ClienteAgendarPage() {
+export default function ClienteAgendarPageWrapper() {
+  return (
+    <Suspense fallback={<div className="text-center mt-12 text-pink-600">Carregando...</div>}>
+      <ClienteAgendarPage />
+    </Suspense>
+  )
+}
+
+function ClienteAgendarPage() {
   const router = useRouter()
   const search = useSearchParams()
   const serviceId = search.get('service') || ''
