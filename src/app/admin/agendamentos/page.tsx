@@ -18,7 +18,14 @@ type Agendamento = {
   service_id: string
   user_id: string
 }
-type Operador = { id: string; nome: string; foto_url?: string }
+type HorarioDia = null | {
+  dia_semana: number
+  inicio: string
+  fim: string
+  almoco_inicio: string
+  almoco_fim: string
+}
+type Operador = { id: string; nome: string; foto_url?: string; horarios?: HorarioDia[] }
 type Servico = { id: string; nome: string }
 type Cliente = { id: string; nome: string }
 
@@ -32,11 +39,42 @@ export default function AgendamentosAdminPage() {
   const [erro, setErro] = useState('')
   const [sucesso, setSucesso] = useState('')
   const [dataSelecionada, setDataSelecionada] = useState<Date>(new Date())
+  const [horariosOperador, setHorariosOperador] = useState<HorarioDia[]>([])
+
   const router = useRouter()
 
   async function fetchRelacionamentos() {
+    // Carrega operadores + horários
     const { data: ops } = await supabase.from('operadores').select('id, nome, foto_url')
-    setOperadores(ops || [])
+    let operadoresComHorarios = []
+    if (ops) {
+      operadoresComHorarios = await Promise.all(
+        ops.map(async (op: Operador) => {
+          const { data: horarios } = await supabase
+            .from('horarios_operador')
+            .select('*')
+            .eq('operador_id', op.id)
+          // Monta array de 6 posições (segunda a sábado)
+          const horariosArray: HorarioDia[] = [null, null, null, null, null, null]
+          if (horarios && horarios.length > 0) {
+            horarios.forEach((h: any) => {
+              const idx = (h.dia_semana ?? 1) - 1
+              if (idx >= 0 && idx < 6) {
+                horariosArray[idx] = {
+                  dia_semana: h.dia_semana,
+                  inicio: h.hora_inicio,
+                  fim: h.hora_fim,
+                  almoco_inicio: h.almoco_inicio,
+                  almoco_fim: h.almoco_fim,
+                }
+              }
+            })
+          }
+          return { ...op, horarios: horariosArray }
+        })
+      )
+      setOperadores(operadoresComHorarios)
+    }
     const { data: svs } = await supabase.from('services').select('id, nome')
     setServicos(svs || [])
     const { data: cls } = await supabase.from('users').select('id, nome')
@@ -64,6 +102,16 @@ export default function AgendamentosAdminPage() {
     setCarregando(false)
   }
 
+  // Carregar horários do operador quando muda seleção
+  useEffect(() => {
+    if (operadorSelecionado === 'todos') {
+      setHorariosOperador([])
+      return
+    }
+    const op = operadores.find(o => o.id === operadorSelecionado)
+    setHorariosOperador(op?.horarios || [])
+  }, [operadorSelecionado, operadores])
+
   useEffect(() => { fetchRelacionamentos() }, [])
   useEffect(() => { fetchAgendamentos() }, [operadorSelecionado, dataSelecionada])
 
@@ -80,35 +128,58 @@ export default function AgendamentosAdminPage() {
     return operadores.find(o => o.id === operadorId)?.foto_url || '/logo.png'
   }
 
+  // Monta agendamentos do dia
   const agendamentosDoDia = agendamentos.filter((a) =>
     isSameDay(parseISO(a.data_hora), dataSelecionada) &&
     (operadorSelecionado === 'todos' || a.operador_id === operadorSelecionado)
   )
 
+  // Pega horários já agendados
   const horariosAgendados = agendamentosDoDia
     .filter((a) => a.status === 'agendado' || a.status === 'concluído')
     .map((a) => format(new Date(a.data_hora), 'HH:mm'))
 
-  function gerarHorariosDisponiveis(duracao: number, agendados: string[], data: Date) {
-    const horarios: string[] = []
-    const horaInicio = 8, horaFim = 18
-    for (let h = horaInicio; h < horaFim; h++) {
-      for (let m = 0; m < 60; m += duracao) {
-        if (h >= 12 && h < 13) continue
-        const hora = `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`
-        horarios.push(hora)
+  // Pega horários do operador selecionado (ou padrão 08-18h c/ almoço)
+  function gerarHorariosDisponiveis() {
+    let horarios: string[] = []
+    // Pega a configuração do operador selecionado ou padrão
+    let expIni = '08:00', expFim = '18:00', mAlmIni: string | null = '12:00', mAlmFim: string | null = '13:00'
+    if (operadorSelecionado !== 'todos' && horariosOperador.length > 0) {
+      // Descobre o dia da semana da data selecionada (segunda=1 ... sábado=6)
+      const idx = dataSelecionada.getDay() - 1 // segunda=1
+      const confDia = horariosOperador[idx]
+      if (confDia) {
+        expIni = confDia.inicio || '08:00'
+        expFim = confDia.fim || '18:00'
+        mAlmIni = confDia.almoco_inicio || null
+        mAlmFim = confDia.almoco_fim || null
       }
     }
-    if (format(data, 'yyyy-MM-dd') === format(new Date(), 'yyyy-MM-dd')) {
+    // Gera horários de acordo com expediente e almoço
+    const [iniH, iniM] = expIni.split(':').map(Number)
+    const [fimH, fimM] = expFim.split(':').map(Number)
+    for (let h = iniH; h < fimH; h++) {
+      for (let m = h === iniH ? iniM : 0; m < 60; m += 60) {
+        // pula horário de almoço se configurado
+        if (mAlmIni && mAlmFim) {
+          const horaStr = `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`
+          if (horaStr >= mAlmIni && horaStr < mAlmFim) continue
+        }
+        const horaStr = `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`
+        horarios.push(horaStr)
+      }
+    }
+    // Remove horários já agendados
+    if (format(dataSelecionada, 'yyyy-MM-dd') === format(new Date(), 'yyyy-MM-dd')) {
       const horaAtual = new Date().getHours()
       return horarios.filter(horaStr => {
         const [h] = horaStr.split(':').map(Number)
-        return h > horaAtual && !agendados.includes(horaStr)
+        return h > horaAtual && !horariosAgendados.includes(horaStr)
       })
     }
-    return horarios.filter(hora => !agendados.includes(hora))
+    return horarios.filter(hora => !horariosAgendados.includes(hora))
   }
-  const horariosDisponiveis = gerarHorariosDisponiveis(60, horariosAgendados, dataSelecionada)
+  const horariosDisponiveis = gerarHorariosDisponiveis()
 
   const marcarDias = ({ date }: { date: Date }) => {
     const tem = agendamentos.some((a) => isSameDay(parseISO(a.data_hora), date))
@@ -204,36 +275,35 @@ export default function AgendamentosAdminPage() {
           )}
         </div>
         {/* Foto do operador + filtro */}
-<div className="flex flex-col items-center gap-3">
-  <img
-    src={
-      operadorSelecionado === 'todos'
-        ? '/logo.png'
-        : fotoOperador(operadorSelecionado)
-    }
-    alt="Foto do operador"
-    className="w-full max-w-md h-[230px] object-cover rounded-lg shadow-xl bg-zinc-100 mx-auto mt-4"
-  />
-  {/* Filtro ocupa a mesma largura da foto */}
-  <div className="w-full max-w-md mt-2">
-    <div className="bg-white/80 border border-pink-100 rounded-xl px-6 py-2 shadow flex items-center gap-3 w-full">
-      <label className="text-sm text-pink-800 font-medium">Operador:</label>
-      <select
-        value={operadorSelecionado}
-        onChange={(e) => setOperadorSelecionado(e.target.value)}
-        className="border border-pink-200 rounded px-3 py-1 text-sm shadow bg-white focus:ring-2 focus:ring-pink-200 transition w-full"
-      >
-        <option value="todos">Todos</option>
-        {operadores.map((op) => (
-          <option key={op.id} value={op.id}>
-            {op.nome}
-          </option>
-        ))}
-      </select>
-    </div>
-  </div>
-</div>
-
+        <div className="flex flex-col items-center gap-3">
+          <img
+            src={
+              operadorSelecionado === 'todos'
+                ? '/logo.png'
+                : fotoOperador(operadorSelecionado)
+            }
+            alt="Foto do operador"
+            className="w-full max-w-md h-[230px] object-cover rounded-lg shadow-xl bg-zinc-100 mx-auto mt-4"
+          />
+          {/* Filtro ocupa a mesma largura da foto */}
+          <div className="w-full max-w-md mt-2">
+            <div className="bg-white/80 border border-pink-100 rounded-xl px-6 py-2 shadow flex items-center gap-3 w-full">
+              <label className="text-sm text-pink-800 font-medium">Operador:</label>
+              <select
+                value={operadorSelecionado}
+                onChange={(e) => setOperadorSelecionado(e.target.value)}
+                className="border border-pink-200 rounded px-3 py-1 text-sm shadow bg-white focus:ring-2 focus:ring-pink-200 transition w-full"
+              >
+                <option value="todos">Todos</option>
+                {operadores.map((op) => (
+                  <option key={op.id} value={op.id}>
+                    {op.nome}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+        </div>
       </div>
 
       {/* LINHA FINA DIVISÓRIA */}
@@ -285,6 +355,7 @@ export default function AgendamentosAdminPage() {
       </div>
 
       <style jsx global>{`
+        /* Highlight para dias com agendamento */
         .react-calendar__tile.highlight {
           background: #fee2e2 !important;
           color: #be185d !important;
@@ -293,6 +364,42 @@ export default function AgendamentosAdminPage() {
           box-shadow: 0 0 0 2px #f472b644;
           transition: background 0.2s;
         }
+        /* Bolinha estilizada para o dia de hoje */
+        .react-calendar__tile--now {
+          background: none !important;
+          color: #be185d !important;
+          position: relative;
+          font-weight: bold;
+        }
+        .react-calendar__tile--now::after {
+          content: '';
+          position: absolute;
+          left: 50%;
+          bottom: 6px;
+          transform: translateX(-50%);
+          width: 8px;
+          height: 8px;
+          background: #f43f5e;
+          border-radius: 50%;
+          box-shadow: 0 2px 8px #f472b680;
+          display: block;
+        }
+        /* Seleção múltipla/single (não deixa sobrescrever o dot) */
+        .react-calendar__tile--active {
+          background: #fbcfe8 !important;
+          color: #a21caf !important;
+          border-radius: 1.8rem;
+        }
+        @media (max-width: 640px) {
+          .calendar-modern {
+            padding: 0.7rem 0.45rem !important;
+            max-width: 94vw !important;
+            margin-bottom: 1rem !important;
+            border-radius: 1.15rem !important;
+            box-shadow: 0 2px 8px #d946ef1a !important;
+            font-size: 0.93rem !important;
+          }
+        }
         .animate-fade-in {
           animation: fadeIn 0.7s;
         }
@@ -300,26 +407,6 @@ export default function AgendamentosAdminPage() {
           0% { opacity: 0; transform: translateY(10px);}
           100% { opacity: 1; transform: none;}
         }
-        /* Esconde o ponto ou linha do dia atual no react-calendar */
-.react-calendar__tile--now {
-  background: none !important;
-  color: inherit !important;
-  box-shadow: none !important;
-  position: relative;
-}
-.react-calendar__tile--now abbr {
-  border-bottom: none !important;
-  text-decoration: none !important;
-  box-shadow: none !important;
-}
-.react-calendar__tile--now::after,
-.react-calendar__tile--now::before {
-  display: none !important;
-  box-shadow: none !important;
-  content: none !important;
-}
-
-
       `}</style>
     </main>
   )

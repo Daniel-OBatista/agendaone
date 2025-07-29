@@ -154,13 +154,14 @@ body {
   z-index: 2;
   transform: scale(1.07) !important;
 }
+
 .swiper-slide-prev,
 .swiper-slide-next {
-  opacity: 0.32 !important;
-  filter: blur(2.5px) grayscale(100%) !important;
-  pointer-events: none !important; /* só os laterais não recebem clique */
+  opacity: 1 !important;
+  filter: none !important;
+  pointer-events: auto !important;
   z-index: 1;
-  transform: scale(0.97) !important;
+  transform: none !important;
 }
 
 /* ========== SWIPER: TAMANHO/ESTILO MOBILE ========== */

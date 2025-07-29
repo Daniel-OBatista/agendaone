@@ -19,7 +19,8 @@ type Operador = {
   foto_url?: string
   servico_ids: string[]
   horarios?: HorarioDia[]
-  ausencias?: Ausencia[]
+  bloqueio_inicio?: string | null
+  bloqueio_fim?: string | null
 }
 
 type Servico = {
@@ -27,7 +28,7 @@ type Servico = {
   nome: string
 }
 
-const DIAS_LABELS = ['Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado']
+const DIAS_LABELS = ['Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sabádo']
 
 type HorarioDia = null | {
   dia_semana: number
@@ -35,12 +36,6 @@ type HorarioDia = null | {
   fim: string
   almoco_inicio: string
   almoco_fim: string
-}
-
-type Ausencia = {
-  inicio: string
-  fim: string
-  diaTodo?: boolean
 }
 
 export default function OperadoresAdminPage() {
@@ -64,16 +59,12 @@ export default function OperadoresAdminPage() {
   // Horários por dia da semana (segunda a sábado)
   const [horarios, setHorarios] = useState<HorarioDia[]>([null, null, null, null, null, null])
 
-  // Ausências
-  const [ausencias, setAusencias] = useState<Ausencia[]>([])
-  const [dataAusencia, setDataAusencia] = useState('')
-  const [horaInicioAusencia, setHoraInicioAusencia] = useState('')
-  const [horaFimAusencia, setHoraFimAusencia] = useState('')
-  const [diaTodoAusencia, setDiaTodoAusencia] = useState(false)
+  // NOVO - Bloqueio de agenda (férias/licença)
+  const [bloqueio_inicio, setBloqueioInicio] = useState('')
+  const [bloqueio_fim, setBloqueioFim] = useState('')
 
   // Accordion
   const [mostrarHorarios, setMostrarHorarios] = useState(false)
-  const [mostrarAusencias, setMostrarAusencias] = useState(false)
 
   useEffect(() => {
     verificarAdmin()
@@ -121,21 +112,12 @@ export default function OperadoresAdminPage() {
     return dias
   }
 
-  async function fetchAusencias(operador_id: string) {
-    const { data } = await supabase
-      .from('ausencias_operador')
-      .select('inicio, fim, diaTodo')
-      .eq('operador_id', operador_id)
-    return data || []
-  }
-
   async function fetchOperadores() {
     const { data, error } = await supabase.from('operadores').select('*')
     if (!error && data) {
       const operadoresComExtras = await Promise.all(data.map(async (op: Operador) => {
         const horarios = await fetchHorarios(op.id)
-        const ausencias = await fetchAusencias(op.id)
-        return { ...op, horarios, ausencias }
+        return { ...op, horarios }
       }))
       setOperadores(operadoresComExtras)
     }
@@ -149,8 +131,6 @@ export default function OperadoresAdminPage() {
   async function carregarHorariosOperador(operadorId: string) {
     const dias = await fetchHorarios(operadorId)
     setHorarios(dias)
-    const aus = await fetchAusencias(operadorId)
-    setAusencias(aus)
   }
 
   async function salvarOperador() {
@@ -184,6 +164,8 @@ export default function OperadoresAdminPage() {
       telefone,
       servico_ids: servicoSelecionado,
       foto_url: foto_url || fotoPreview || null,
+      bloqueio_inicio: bloqueio_inicio || null,
+      bloqueio_fim: bloqueio_fim || null,
     }
 
     let operador_id: string | null = null
@@ -192,7 +174,6 @@ export default function OperadoresAdminPage() {
       await supabase.from('operadores').update(dados).eq('id', idEditando)
       operador_id = idEditando
       await supabase.from('horarios_operador').delete().eq('operador_id', idEditando)
-      await supabase.from('ausencias_operador').delete().eq('operador_id', idEditando)
     } else {
       const { data: insertData, error: insertError } = await supabase
         .from('operadores')
@@ -229,17 +210,6 @@ export default function OperadoresAdminPage() {
           return
         }
       }
-
-      // Salvar ausências
-      if (ausencias.length > 0) {
-        const ausenciasSalvas = ausencias.map(aus => ({
-          operador_id,
-          inicio: aus.inicio,
-          fim: aus.fim,
-          diaTodo: aus.diaTodo || false
-        }))
-        await supabase.from('ausencias_operador').insert(ausenciasSalvas)
-      }
     }
 
     cancelarEdicao()
@@ -256,7 +226,8 @@ export default function OperadoresAdminPage() {
     setFoto(null)
     setFotoPreview(op.foto_url || null)
     setHorarios(op.horarios || [null, null, null, null, null, null])
-    setAusencias(op.ausencias || [])
+    setBloqueioInicio(op.bloqueio_inicio || '')
+    setBloqueioFim(op.bloqueio_fim || '')
   }
 
   function cancelarEdicao() {
@@ -270,20 +241,14 @@ export default function OperadoresAdminPage() {
     setFotoPreview(null)
     setErro('')
     setHorarios([null, null, null, null, null, null])
-    setAusencias([])
-    setDataAusencia('')
-    setHoraInicioAusencia('')
-    setHoraFimAusencia('')
-    setDiaTodoAusencia(false)
-    setMostrarHorarios(false)
-    setMostrarAusencias(false)
+    setBloqueioInicio('')
+    setBloqueioFim('')
   }
 
   async function excluirOperador(id: string) {
     if (!confirm('Deseja realmente excluir este operador?')) return
     await supabase.from('operadores').delete().eq('id', id)
     await supabase.from('horarios_operador').delete().eq('operador_id', id)
-    await supabase.from('ausencias_operador').delete().eq('operador_id', id)
     fetchOperadores()
   }
 
@@ -388,6 +353,30 @@ export default function OperadoresAdminPage() {
               ))}
             </select>
 
+            {/* BLOQUEIO DE AGENDA (FÉRIAS/LICENÇA) */}
+            <div className="flex flex-row gap-4 mb-3">
+              <div>
+                <label className="block text-sm font-medium text-pink-700 mb-1">Início do bloqueio (férias/licença):</label>
+                <input
+  type="datetime-local"
+  value={bloqueio_inicio}
+  onChange={e => setBloqueioInicio(e.target.value)}
+  className="w-full p-2 rounded-xl border border-pink-200 focus:ring-2 focus:ring-pink-400 text-base"
+/>
+
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-pink-700 mb-1">Fim do bloqueio:</label>
+                <input
+  type="datetime-local"
+  value={bloqueio_fim}
+  onChange={e => setBloqueioFim(e.target.value)}
+  className="w-full p-2 rounded-xl border border-pink-200 focus:ring-2 focus:ring-pink-400 text-base"
+/>
+
+              </div>
+            </div>
+
             {/* Accordion Horários */}
             <div className="mt-6 mb-2">
               <button
@@ -482,99 +471,6 @@ export default function OperadoresAdminPage() {
               )}
             </div>
 
-            {/* Accordion Ausências */}
-            <div className="mt-4">
-              <button
-                type="button"
-                className="w-full flex justify-between items-center px-4 py-3 bg-pink-100 hover:bg-pink-200 rounded-xl border-2 border-pink-200 font-semibold text-pink-700 text-base transition"
-                onClick={() => setMostrarAusencias(v => !v)}
-              >
-                Datas de ausência (não trabalhará)
-                <span className="ml-2">{mostrarAusencias ? "▲" : "▼"}</span>
-              </button>
-              {mostrarAusencias && (
-                <div className="flex flex-col mt-4">
-                  <div className="flex flex-wrap items-center gap-2 mb-2">
-                    <input
-                      type="date"
-                      value={dataAusencia}
-                      onChange={e => setDataAusencia(e.target.value)}
-                      className="border p-2 rounded w-40"
-                    />
-                    {!diaTodoAusencia && (
-                      <>
-                        <input
-                          type="time"
-                          value={horaInicioAusencia}
-                          onChange={e => setHoraInicioAusencia(e.target.value)}
-                          className="border p-2 rounded w-28"
-                        />
-                        <span>até</span>
-                        <input
-                          type="time"
-                          value={horaFimAusencia}
-                          onChange={e => setHoraFimAusencia(e.target.value)}
-                          className="border p-2 rounded w-28"
-                        />
-                      </>
-                    )}
-                    <label className="flex items-center gap-2 ml-2">
-                      <input
-                        type="checkbox"
-                        checked={diaTodoAusencia}
-                        onChange={e => setDiaTodoAusencia(e.target.checked)}
-                      />
-                      Dia todo
-                    </label>
-                    <button
-                      onClick={() => {
-                        if (
-                          dataAusencia &&
-                          (
-                            (diaTodoAusencia && dataAusencia) ||
-                            (!diaTodoAusencia && horaInicioAusencia && horaFimAusencia)
-                          )
-                        ) {
-                          const novaAusencia: Ausencia = {
-                            inicio: `${dataAusencia}T${diaTodoAusencia ? '00:00' : horaInicioAusencia}`,
-                            fim: `${dataAusencia}T${diaTodoAusencia ? '23:59' : horaFimAusencia}`,
-                            diaTodo: diaTodoAusencia
-                          }
-                          setAusencias([...ausencias, novaAusencia])
-                          setDataAusencia('')
-                          setHoraInicioAusencia('')
-                          setHoraFimAusencia('')
-                          setDiaTodoAusencia(false)
-                        }
-                      }}
-                      className="bg-pink-500 text-white rounded px-5 py-2 hover:bg-pink-700 font-semibold text-sm"
-                      type="button"
-                    >
-                      + Adicionar ausência
-                    </button>
-                  </div>
-                  <ul className="mt-2 space-y-1">
-                    {ausencias.map((a, i) => (
-                      <li key={i} className="flex items-center gap-2 text-sm">
-                        <span>
-                          {a.diaTodo
-                            ? `${a.inicio.slice(0, 10)} (dia todo)`
-                            : `${a.inicio.replace('T', ' ')} até ${a.fim.replace('T', ' ')}`}
-                        </span>
-                        <button
-                          className="text-xs text-red-500 hover:underline"
-                          onClick={() => setAusencias(ausencias.filter((_, idx) => idx !== i))}
-                          type="button"
-                        >
-                          Remover
-                        </button>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              )}
-            </div>
-
             <div className="mb-2">
               <label className="block text-sm font-medium text-pink-700 mb-1">Foto:</label>
               <div className="flex items-center gap-2">
@@ -621,7 +517,7 @@ export default function OperadoresAdminPage() {
         {erro && <p className="text-red-500 text-xs mt-2">{erro}</p>}
       </div>
 
-      {/* Filtro de busca - igual servicos */}
+      {/* Filtro de busca */}
       <div className="flex flex-col gap-3 justify-between items-center mb-7 max-w-xl mx-auto w-full">
         <input
           type="text"
@@ -688,7 +584,7 @@ export default function OperadoresAdminPage() {
           {operadoresFiltrados.map((o, idx) => (
             <SwiperSlide key={o.id}>
               <div
-                className="swiper-card bg-white/95 rounded-2xl p-4 sm:p-7 shadow-xl border-2 border-pink-100 mx-auto transition duration-300"
+  className="swiper-card bg-white rounded-2xl p-4 sm:p-7 shadow-3xl border-0 mx-auto transition duration-300"
                 style={{
                   width: '98vw',
                   maxWidth: '520px',
@@ -730,21 +626,20 @@ export default function OperadoresAdminPage() {
                       </ul>
                     </div>
                   )}
-                  {/* AUSÊNCIAS CARD */}
-                  {Array.isArray(o.ausencias) && o.ausencias.length > 0 && (
-                    <div className="mt-1 w-full">
-                      <p className="text-xs font-bold text-pink-700 mb-1">Ausências:</p>
-                      <ul className="text-xs text-zinc-700 leading-5">
-                        {o.ausencias.map((a, i) => (
-                          <li key={i}>
-                            {a.diaTodo
-                              ? `${a.inicio.slice(0, 10)} (dia todo)`
-                              : `${a.inicio.replace('T', ' ')} até ${a.fim.replace('T', ' ')}`}
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                  )}
+                  {/* BLOQUEIO DE AGENDA */}
+                  {(o.bloqueio_inicio && o.bloqueio_fim) && (
+  <div className="mt-2 w-full rounded-lg bg-pink-50 px-3 py-2 border border-pink-200 text-pink-700 font-semibold text-xs shadow">
+    Agenda bloqueada de{' '}
+    <span className="font-bold">
+      {new Date(o.bloqueio_inicio).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' })}
+    </span>
+    {' '}até{' '}
+    <span className="font-bold">
+      {new Date(o.bloqueio_fim).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' })}
+    </span>
+  </div>
+)}
+
                 </div>
                 {/* Botões de ação */}
                 {activeIndex === idx && (
@@ -771,10 +666,10 @@ export default function OperadoresAdminPage() {
 
       <style jsx global>{`
         .swiper-slide {
-          transition: opacity 0.4s, filter 0.4s, transform 0.45s !important;
           opacity: 1 !important;
           filter: none !important;
           pointer-events: none;
+          transition: opacity 0.4s, filter 0.4s, transform 0.45s !important;
         }
         .swiper-slide.swiper-slide-active {
           opacity: 1 !important;
@@ -784,13 +679,14 @@ export default function OperadoresAdminPage() {
           transform: scale(1.07) !important;
         }
         .swiper-slide-prev,
-        .swiper-slide-next {
-          opacity: 0.32 !important;
-          filter: blur(2.5px) grayscale(100%) !important;
-          pointer-events: none !important;
-          z-index: 1;
-          transform: scale(0.97) !important;
-        }
+.swiper-slide-next {
+  opacity: 1 !important;
+  filter: none !important;
+  pointer-events: auto !important;
+  z-index: 1;
+  transform: none !important;
+}
+
         @media (max-width: 640px) {
           .servicos-form-card {
             padding: 0.7rem 0.45rem !important;
@@ -824,15 +720,7 @@ export default function OperadoresAdminPage() {
             border-radius: 0.9rem !important;
           }
         }
-        @media (min-width: 641px) {
-          .swiper-slide-prev,
-          .swiper-slide-next {
-            opacity: 0.32 !important;
-            filter: blur(2.5px) grayscale(100%) !important;
-            pointer-events: none !important;
-            transform: scale(0.97) !important;
-          }
-        }
+        
         .swiper-pagination {
           position: absolute !important;
           bottom: 38px !important;
